@@ -30,7 +30,10 @@
     "@solana/web3.js": "^0.90.5",
     "aes-js": "^3.1.2",
     "axios": "^0.21.1",
+    "bn.js": "^5.1.3",
+    "bs58": "^4.0.1",
     "crypto-random-string": "^3.3.0",
+    "keccak256": "^1.0.2",
     "pbkdf2": "^3.1.1",
     "seedrandom": "^3.0.5",
     "soprox-abi": "0.0.10"

@@ -18,11 +18,13 @@ util.imgFromCGK = (cgk) => {
     return axios({
       method: 'get',
       url: cgk,
-    }).then(({ data: { image: { large } } }) => {
-      if (!large) return resolve(null);
-      return resolve(large);
+    }).then(({ data: { image: { large, small, thumb } } }) => {
+      if (large) return resolve(large);
+      else if (thumb) return resolve(thumb);
+      else if (small) return resolve(small);
+      else return reject('No logo');
     }).catch(er => {
-      return resolve(null);
+      return reject(er);
     });
   });
 }

@@ -1,43 +1,43 @@
-const { Account } = require('@solana/web3.js');
-const { null } = require('mathjs');
+const { Account, PublicKey } = require('@solana/web3.js');
 const ssKeystore = require('./keystore');
 
 
-const ssAccount = {}
+const account = {}
 
-ssAccount.isAddress = (address) => {
+account.isAddress = (address) => {
   try {
     const publicKey = new PublicKey(address);
     if (!publicKey) throw new Error('Invalid public key');
     return true;
   } catch (er) {
+    console.warn(er);
     return false;
   }
 }
 
-ssAccount.createAccount = () => {
-  const account = new Account();
-  return account;
+account.createAccount = () => {
+  const acc = new Account();
+  return acc;
 }
 
-ssAccount.createStrictAccount = (programId) => {
+account.createStrictAccount = (programId) => {
   const createStrictAccountCallback = (_programId, cb) => {
-    const account = new Account();
-    const seeds = [account.publicKey.toBuffer()];
+    const acc = new Account();
+    const seeds = [acc.publicKey.toBuffer()];
     return PublicKey.createProgramAddress(seeds, _programId).then(re => {
-      return cb(account);
+      return cb(acc);
     }).catch(er => {
       return createStrictAccountCallback(_programId, cb);
     });
   }
   return new Promise((resolve, reject) => {
-    return createStrictAccountCallback(programId, account => {
-      return resolve(account);
+    return createStrictAccountCallback(programId, acc => {
+      return resolve(acc);
     });
   });
 }
 
-ssAccount.fromAddress = (address) => {
+account.fromAddress = (address) => {
   if (!address) return false;
   try {
     const publicKey = new PublicKey(address);
@@ -47,21 +47,21 @@ ssAccount.fromAddress = (address) => {
   }
 }
 
-ssAccount.fromSecretKey = (secretKey) => {
+account.fromSecretKey = (secretKey) => {
   if (!secretKey) return null;
   try {
-    const account = new Account(Buffer.from(secretKey, 'hex'));
-    return account;
+    const acc = new Account(Buffer.from(secretKey, 'hex'));
+    return acc;
   } catch (er) {
     return null;
   }
 }
 
-ssAccount.fromKeystore = (keystore, password) => {
+account.fromKeystore = (keystore, password) => {
   if (!keystore || !password) return null;
   const secretKey = ssKeystore.decrypt(keystore, password);
   if (!secretKey) return null;
-  return ssAccount.fromSecretKey(secretKey);
+  return account.fromSecretKey(secretKey);
 }
 
-module.exports = ssAccount;
+module.exports = account;
