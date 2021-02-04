@@ -1,0 +1,38 @@
+{
+  "name": "senswapjs",
+  "version": "0.0.1",
+  "description": "An auxiliary JS library for Senswap",
+  "main": "dist/index.js",
+  "scripts": {
+    "release": "npm run build && npm publish",
+    "build": "npm run clean && babel src -d dist",
+    "clean": "rm -rf ./dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DescartesNetwork/senswapjs.git"
+  },
+  "author": "Tu Phan <tuphan@descartes.network>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DescartesNetwork/senswapjs/issues"
+  },
+  "homepage": "https://github.com/DescartesNetwork/senswapjs#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.12.13",
+    "@babel/core": "^7.12.13",
+    "@babel/plugin-proposal-class-properties": "^7.12.13",
+    "@babel/plugin-transform-arrow-functions": "^7.12.13",
+    "@babel/preset-env": "^7.12.13"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^0.90.5",
+    "aes-js": "^3.1.2",
+    "axios": "^0.21.1",
+    "crypto-random-string": "^3.3.0",
+    "pbkdf2": "^3.1.1",
+    "seedrandom": "^3.0.5",
+    "soprox-abi": "0.0.10"
+  }
+}
