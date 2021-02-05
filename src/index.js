@@ -6,10 +6,10 @@ const util = require('./util');
 const schema = require('./schema');
 
 module.exports = {
-  account,
-  math,
-  keystore,
-  hdkey,
-  util,
-  schema,
+  account, ...account,
+  math, ...math,
+  keystore, ...keystore,
+  hdkey, ...hdkey,
+  util, ...util,
+  schema, ...schema,
 }
