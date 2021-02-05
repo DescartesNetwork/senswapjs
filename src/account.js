@@ -10,7 +10,6 @@ account.isAddress = (address) => {
     if (!publicKey) throw new Error('Invalid public key');
     return true;
   } catch (er) {
-    console.warn(er);
     return false;
   }
 }

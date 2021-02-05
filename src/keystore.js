@@ -33,7 +33,7 @@ keystore.decrypt = (ks, pwd) => {
     const secretKey = aesCtr.decrypt(aesjs.utils.hex.toBytes(ciphertext));
     const account = new Account(secretKey);
     if (account.publicKey.toBase58() !== publicKey) return null;
-    return resolve(Buffer.from(account.secretKey).toString('hex'));
+    return Buffer.from(account.secretKey).toString('hex');
   } catch (er) {
     return null;
   }
