@@ -1,13 +1,12 @@
 {
   "name": "senswapjs",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "An auxiliary JS library for Senswap",
-  "main": "src/index.js",
-  "bin": "bin/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "release": "npm run build && npm publish",
-    "build": "npm run clean && babel src -d bin",
-    "clean": "rm -rf ./bin",
+    "build": "npm run clean && babel src -d dist",
+    "clean": "rm -rf ./dist",
     "local:install": "npm run build && npm i -g",
     "local:uninstall": "npm uninstall -g",
     "test": "echo \"Error: no test specified\" && exit 1"
