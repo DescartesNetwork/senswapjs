@@ -1,6 +1,6 @@
 const axios = require('axios');
 const seedrandom = require('seedrandom');
-const emoji = require('./emoji.json');
+const emoji = require('../data/emoji.json');
 
 const TOTAL_EMOJI = emoji.length;
 
