@@ -13,6 +13,11 @@ util.randEmoji = (seed) => {
   return emoji[Math.floor(seedrandom(seed)() * TOTAL_EMOJI)];
 }
 
+util.toSymbol = (symbol) => {
+  if (!symbol) return '';
+  return symbol.join('').replace(/\u0000/g, '').replace(/-/g, '');
+}
+
 util.imgFromCGK = (cgk) => {
   return new Promise((resolve, reject) => {
     return axios({

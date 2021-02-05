@@ -6,15 +6,20 @@ const account = require('./account');
 
 class HDKey {
   constructor() {
-    this.bufLen = 32;
-    this.c = 4096 // Refer WPA2
-    this.dklen = 64;
-    this.prf = 'sha512';
-    this.endian = 'le';
+    this.encode = {
+      bufLen: 32,
+      endian: 'le'
+    }
+    this.kdf = {
+      c: 4096, // Refer WPA2
+      dklen: 64,
+      prf: 'sha512'
+    }
   }
 
   _parsePath = (path) => {
     const arr = path.split('/');
+    if (!arr[arr.length - 1]) arr.pop();
     const prefix = arr.shift();
     if (prefix !== 'm') throw new Error('Invalid prefix');
     const invalid = arr.some(pathAddress => !account.isAddress(pathAddress));
@@ -24,7 +29,8 @@ class HDKey {
 
   toPathAddress = (strInt) => {
     const index = new BN(strInt);
-    const buf = Buffer.from(index.toArray(this.endian, this.bufLen));
+    const { bufLen, endian } = this.encode;
+    const buf = Buffer.from(index.toArray(endian, bufLen));
     const addr = bs58.encode(buf);
     return addr;
   }
@@ -32,14 +38,16 @@ class HDKey {
   fromPathAddress = (pathAddress) => {
     if (!account.isAddress(pathAddress)) throw new Error('Invalid path address');
     const buf = account.fromAddress(pathAddress).toBuffer();
-    const bigInt = new BN(buf, this.bufLen, this.endian);
+    const { bufLen, endian } = this.encode;
+    const bigInt = new BN(buf, bufLen, endian);
     return bigInt.toString();
   }
 
   _deriveChildKey = (parentKey, pathAddress) => {
     const buf = account.fromAddress(pathAddress).toBuffer();
     const seed = buf.toString('hex');
-    const childKey = pbkdf2.pbkdf2Sync(parentKey, seed, this.c, this.dklen, this.prf);
+    const { c, dklen, prf } = this.kdf;
+    const childKey = pbkdf2.pbkdf2Sync(parentKey, seed, c, dklen, prf);
     return childKey;
   }
 
