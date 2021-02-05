@@ -4,6 +4,8 @@ const keystore = require('./keystore');
 const hdkey = require('./hdkey');
 const util = require('./util');
 const schema = require('./schema');
+const Swap = require('./swap');
+const SRC20 = require('./src20');
 
 module.exports = {
   account, ...account,
@@ -12,4 +14,6 @@ module.exports = {
   hdkey, ...hdkey,
   util, ...util,
   schema, ...schema,
+  Swap,
+  SRC20,
 }
