@@ -1,6 +1,6 @@
 const {
-  Connection, Transaction, TransactionInstruction,
-  SystemProgram, sendAndConfirmTransaction,
+  Connection, Account, Transaction,
+  TransactionInstruction, SystemProgram, sendAndConfirmTransaction,
 } = require('@solana/web3.js');
 const soproxABI = require('soprox-abi');
 
