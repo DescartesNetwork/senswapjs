@@ -73,6 +73,126 @@ class SRC20 {
     });
   }
 
+  newToken = (symbol, totalSupply, decimals, payer) => {
+    return new Promise((resolve, reject) => {
+      const receiver = new Account();
+      const token = new Account();
+      const receiverSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
+      const tokenSpace = (new soproxABI.struct(schema.TOKEN_SCHEMA)).space;
+      return this.connection.getMinimumBalanceForRentExemption(receiverSpace).then(lamports => {
+        const instruction = SystemProgram.createAccount({
+          fromPubkey: payer.publicKey,
+          newAccountPubkey: receiver.publicKey,
+          lamports,
+          space: receiverSpace,
+          programId: this.programId,
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer, receiver],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(re => {
+        return this.connection.getMinimumBalanceForRentExemption(tokenSpace);
+      }).then(lamports => {
+        const instruction = SystemProgram.createAccount({
+          fromPubkey: payer.publicKey,
+          newAccountPubkey: token.publicKey,
+          lamports,
+          space: tokenSpace,
+          programId: this.programId,
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer, token],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(re => {
+        const layout = new soproxABI.struct(
+          [
+            { key: 'code', type: 'u8' },
+            { key: 'symbol', type: '[char;4]' },
+            { key: 'totalSupply', type: 'u64' },
+            { key: 'decimals', type: 'u8' }
+          ],
+          { code: 0, symbol, totalSupply, decimals });
+        const instruction = new TransactionInstruction({
+          keys: [
+            { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+            { pubkey: token.publicKey, isSigner: true, isWritable: true },
+            { pubkey: receiver.publicKey, isSigner: true, isWritable: true },
+          ],
+          programId: this.programId,
+          data: layout.toBuffer()
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer, token, receiver],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(txId => {
+        return resolve({ token, receiver, txId });
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  newAccount = (tokenAddress, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(tokenAddress)) return reject('Invalid address');
+      const tokenPublicKey = account.fromAddress(tokenAddress);
+      const acc = new Account();
+      const space = (new soproxABI.struct(ACCOUNT_SCHEMA)).space;
+      return this.connection.getMinimumBalanceForRentExemption(space).then(lamports => {
+        const instruction = SystemProgram.createAccount({
+          fromPubkey: payer.publicKey,
+          newAccountPubkey: acc.publicKey,
+          lamports,
+          space,
+          programId: this.programId,
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer, acc],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(re => {
+        const layout = new soproxABI.struct(
+          [{ key: 'code', type: 'u8' }],
+          { code: 1 });
+        const instruction = new TransactionInstruction({
+          keys: [
+            { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+            { pubkey: tokenPublicKey, isSigner: false, isWritable: false },
+            { pubkey: acc.publicKey, isSigner: true, isWritable: true },
+          ],
+          programId: this.programId,
+          data: layout.toBuffer()
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer, acc],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(txId => {
+        return resolve({ account: acc, txId });
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
   transferLamports = (lamports, dstAddress, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
@@ -87,14 +207,12 @@ class SRC20 {
         this.connection,
         transaction,
         [payer],
-        {
-          skipPreflight: true,
-          commitment: 'recent'
-        }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
   }
 
@@ -105,8 +223,7 @@ class SRC20 {
       if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
       const layout = new soproxABI.struct(
         [{ key: 'code', type: 'u8' }, { key: 'amount', type: 'u64' }],
-        { code: 3, amount }
-      );
+        { code: 3, amount });
       const instruction = new TransactionInstruction({
         keys: [
           { pubkey: payer.publicKey, isSigner: true, isWritable: false },
@@ -123,14 +240,12 @@ class SRC20 {
         this.connection,
         transaction,
         [payer],
-        {
-          skipPreflight: true,
-          commitment: 'recent'
-        }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
   }
 
