@@ -149,7 +149,7 @@ class SRC20 {
       if (!account.isAddress(tokenAddress)) return reject('Invalid address');
       const tokenPublicKey = account.fromAddress(tokenAddress);
       const acc = new Account();
-      const space = (new soproxABI.struct(ACCOUNT_SCHEMA)).space;
+      const space = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
       return this.connection.getMinimumBalanceForRentExemption(space).then(lamports => {
         const instruction = SystemProgram.createAccount({
           fromPubkey: payer.publicKey,
