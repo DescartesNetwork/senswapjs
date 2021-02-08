@@ -1,6 +1,9 @@
+const nacl = require('tweetnacl');
 const pbkdf2 = require('pbkdf2');
 const bs58 = require('bs58');
+const xor = require('buffer-xor');
 const BN = require('bn.js');
+
 const account = require('./account');
 
 
@@ -31,8 +34,12 @@ hdkey._deriveChildKey = (parentKey, pathAddress) => {
   const buf = account.fromAddress(pathAddress).toBuffer();
   const seed = buf.toString('hex');
   const { c, dklen, prf } = hdkey.KDF_PARAMS;
-  const childKey = pbkdf2.pbkdf2Sync(parentKey, seed, c, dklen, prf);
-  return childKey;
+  const seedBuf = pbkdf2.pbkdf2Sync(parentKey, seed, c, dklen, prf);
+  const firstHalfBuf = seedBuf.slice(0, seedBuf.length / 2);
+  const secondHalfBuf = seedBuf.slice(seedBuf.length / 2, seedBuf.length);
+  const xoredBuf = xor(firstHalfBuf, secondHalfBuf);
+  const childKeyPair = nacl.sign.keyPair.fromSeed(xoredBuf);
+  return childKeyPair.secretKey;
 }
 
 hdkey.toPathAddress = (strInt) => {

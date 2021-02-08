@@ -49,8 +49,7 @@ account.fromAddress = (address) => {
 account.fromSecretKey = (secretKey) => {
   if (!secretKey) return null;
   try {
-    const acc = new Account(Buffer.from(secretKey, 'hex'));
-    return acc;
+    return new Account(Buffer.from(secretKey, 'hex'));
   } catch (er) {
     return null;
   }
