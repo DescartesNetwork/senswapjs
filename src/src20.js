@@ -65,8 +65,9 @@ class SRC20 {
   getLamports = (address) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(address)) return reject('Invalid address');
-      return this.connection.getBalance(account.fromAddress(address)).then(re => {
-        return resolve(re);
+      const publicKey = account.fromAddress(address);
+      return this.connection.getBalance(publicKey).then(lamports => {
+        return resolve(lamports);
       }).catch(er => {
         return reject(er);
       });
@@ -144,16 +145,15 @@ class SRC20 {
     });
   }
 
-  newAccount = (tokenAddress, payer) => {
+  newAccount = (newAccount, tokenAddress, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(tokenAddress)) return reject('Invalid address');
       const tokenPublicKey = account.fromAddress(tokenAddress);
-      const acc = new Account();
       const space = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
       return this.connection.getMinimumBalanceForRentExemption(space).then(lamports => {
         const instruction = SystemProgram.createAccount({
           fromPubkey: payer.publicKey,
-          newAccountPubkey: acc.publicKey,
+          newAccountPubkey: newAccount.publicKey,
           lamports,
           space,
           programId: this.programId,
@@ -163,7 +163,7 @@ class SRC20 {
         return sendAndConfirmTransaction(
           this.connection,
           transaction,
-          [payer, acc],
+          [payer, newAccount],
           { skipPreflight: true, commitment: 'recent' });
       }).then(re => {
         const layout = new soproxABI.struct(
@@ -173,7 +173,7 @@ class SRC20 {
           keys: [
             { pubkey: payer.publicKey, isSigner: true, isWritable: false },
             { pubkey: tokenPublicKey, isSigner: false, isWritable: false },
-            { pubkey: acc.publicKey, isSigner: true, isWritable: true },
+            { pubkey: newAccount.publicKey, isSigner: true, isWritable: true },
           ],
           programId: this.programId,
           data: layout.toBuffer()
@@ -183,10 +183,10 @@ class SRC20 {
         return sendAndConfirmTransaction(
           this.connection,
           transaction,
-          [payer, acc],
+          [payer, newAccount],
           { skipPreflight: true, commitment: 'recent' });
       }).then(txId => {
-        return resolve({ account: acc, txId });
+        return resolve(txId);
       }).catch(er => {
         return reject(er);
       });

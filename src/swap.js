@@ -321,8 +321,8 @@ class Swap {
           transaction,
           [payer],
           { skipPreflight: true, commitment: 'recent' });
-      }).then(re => {
-        return resolve(re);
+      }).then(txId => {
+        return resolve(txId);
       }).catch(er => {
         return reject(er);
       });
@@ -372,8 +372,8 @@ class Swap {
           transaction,
           [payer],
           { skipPreflight: true, commitment: 'recent' });
-      }).then(re => {
-        return resolve(re);
+      }).then(txId => {
+        return resolve(txId);
       }).catch(er => {
         return reject(er);
       });
@@ -441,8 +441,8 @@ class Swap {
           transaction,
           [payer],
           { skipPreflight: true, commitment: 'recent', });
-      }).then(re => {
-        return resolve(re);
+      }).then(txId => {
+        return resolve(txId);
       }).catch(er => {
         return reject(er);
       });
