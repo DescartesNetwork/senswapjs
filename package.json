@@ -1,6 +1,6 @@
 {
   "name": "senswapjs",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "An auxiliary JS library for Senswap",
   "main": "dist/index.js",
   "scripts": {
@@ -27,8 +27,7 @@
     "@babel/plugin-proposal-class-properties": "^7.12.13",
     "@babel/plugin-transform-arrow-functions": "^7.12.13",
     "@babel/preset-env": "^7.12.13",
-    "mocha": "^8.2.1",
-    "tweetnacl": "^1.0.3"
+    "mocha": "^8.2.1"
   },
   "dependencies": {
     "@solana/web3.js": "^0.90.5",
@@ -38,11 +37,10 @@
     "bs58": "^4.0.1",
     "buffer-xor": "^2.0.2",
     "crypto-random-string": "^3.3.0",
-    "i": "^0.3.6",
     "keccak256": "^1.0.2",
-    "npm": "^7.5.2",
     "pbkdf2": "^3.1.1",
     "seedrandom": "^3.0.5",
-    "soprox-abi": "0.0.10"
+    "soprox-abi": "0.0.10",
+    "tweetnacl": "^1.0.3"
   }
 }
