@@ -136,7 +136,7 @@ class SRC20 {
           [payer, token, receiver],
           { skipPreflight: true, commitment: 'recent' });
       }).then(txId => {
-        return resolve({ token, receiver, txId });
+        return resolve(txId);
       }).catch(er => {
         return reject(er);
       });
