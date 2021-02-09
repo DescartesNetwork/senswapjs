@@ -74,10 +74,8 @@ class SRC20 {
     });
   }
 
-  newToken = (symbol, totalSupply, decimals, payer) => {
+  newToken = (symbol, totalSupply, decimals, receiver, token, payer) => {
     return new Promise((resolve, reject) => {
-      const receiver = new Account();
-      const token = new Account();
       const receiverSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
       const tokenSpace = (new soproxABI.struct(schema.TOKEN_SCHEMA)).space;
       return this.connection.getMinimumBalanceForRentExemption(receiverSpace).then(lamports => {
