@@ -125,7 +125,7 @@ class Swap {
     });
   }
 
-  newPool = (reserve, value, srcAddress, tokenAddress, lpt, payer) => {
+  newPool = (reserve, value, srcAddress, tokenAddress, pool, treasury, lpt, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(srcAddress)) return reject('Invalid source address');
       if (!account.isAddress(tokenAddress)) return reject('Invalid token address');
@@ -133,15 +133,10 @@ class Swap {
       const srcPublicKey = account.fromAddress(srcAddress);
       const tokenPublicKey = account.fromAddress(tokenAddress);
 
-      let pool = null;
-      let treasury = new Account();
       const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
       const treasurySpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
       const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
-      return account.createStrictAccount(this.swapProgramId).then(re => {
-        pool = re;
-        return this.connection.getMinimumBalanceForRentExemption(poolSpace)
-      }).then(lamports => {
+      return this.connection.getMinimumBalanceForRentExemption(poolSpace).then(lamports => {
         const instruction = SystemProgram.createAccount({
           fromPubkey: payer.publicKey,
           newAccountPubkey: pool.publicKey,
@@ -224,7 +219,7 @@ class Swap {
           [payer, pool, treasury, lpt],
           { skipPreflight: true, commitment: 'recent' });
       }).then(txId => {
-        return resolve({ pool, treasury, lpt, txId });
+        return resolve(txId);
       }).catch(er => {
         return reject(er);
       });
