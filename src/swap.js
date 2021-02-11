@@ -118,7 +118,7 @@ class Swap {
           [payer, lpt],
           { skipPreflight: true, commitment: 'recent' });
       }).then(txId => {
-        return resolve({ lpt, txId });
+        return resolve(txId);
       }).catch(er => {
         return reject(er);
       });
@@ -151,7 +151,7 @@ class Swap {
           transaction,
           [payer, pool],
           { skipPreflight: true, commitment: 'recent' });
-      }).then(_ => {
+      }).then(re => {
         return this.connection.getMinimumBalanceForRentExemption(treasurySpace);
       }).then(lamports => {
         const instruction = SystemProgram.createAccount({
@@ -168,7 +168,7 @@ class Swap {
           transaction,
           [payer, treasury],
           { skipPreflight: true, commitment: 'recent' });
-      }).then(_ => {
+      }).then(re => {
         return this.connection.getMinimumBalanceForRentExemption(lptSpace);
       }).then(lamports => {
         const instruction = SystemProgram.createAccount({
@@ -185,7 +185,7 @@ class Swap {
           transaction,
           [payer, lpt],
           { skipPreflight: true, commitment: 'recent' });
-      }).then(_ => {
+      }).then(re => {
         const seed = [pool.publicKey.toBuffer()];
         return PublicKey.createProgramAddress(seed, this.swapProgramId);
       }).then(tokenOwnerPublicKey => {

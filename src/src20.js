@@ -163,7 +163,7 @@ class SRC20 {
           transaction,
           [payer, newAccount],
           { skipPreflight: true, commitment: 'recent' });
-      }).then(_ => {
+      }).then(re => {
         const layout = new soproxABI.struct(
           [{ key: 'code', type: 'u8' }],
           { code: 1 });
