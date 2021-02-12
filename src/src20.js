@@ -1,6 +1,6 @@
 const {
-  Connection, Account, Transaction,
-  TransactionInstruction, SystemProgram, sendAndConfirmTransaction,
+  Connection, Transaction, TransactionInstruction,
+  SystemProgram, sendAndConfirmTransaction,
 } = require('@solana/web3.js');
 const soproxABI = require('soprox-abi');
 
@@ -22,6 +22,20 @@ class SRC20 {
   _createConnection = () => {
     const connection = new Connection(this.nodeUrl, 'recent');
     return connection;
+  }
+
+  watch = (callback) => {
+    return this.connection.onProgramAccountChange(this.programId, ({ accountId }) => {
+      return this.getTokenData(accountId).then(data => {
+        return callback(null, data);
+      }).catch(er => {
+        return this.getAccountData(accountId);
+      }).then(data => {
+        return callback(null, data);
+      }).catch(er => {
+        return callback('Cannot parse data', null);
+      });
+    });
   }
 
   getTokenData = (tokenAddress) => {

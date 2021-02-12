@@ -1,6 +1,6 @@
 const {
-  Account, Connection, PublicKey, Transaction,
-  LAMPORTS_PER_SOL, SystemProgram, sendAndConfirmTransaction,
+  Connection, PublicKey, Transaction,
+  SystemProgram, sendAndConfirmTransaction,
   TransactionInstruction,
 } = require('@solana/web3.js');
 const soproxABI = require('soprox-abi');
@@ -30,6 +30,20 @@ class Swap {
   _createConnection = () => {
     const connection = new Connection(this.nodeUrl, 'recent');
     return connection;
+  }
+
+  watch = (callback) => {
+    return this.connection.onProgramAccountChange(this.swapProgramId, ({ accountId }) => {
+      return this.getPoolData(accountId).then(data => {
+        return callback(null, data);
+      }).catch(er => {
+        return this.getLPTData(accountId);
+      }).then(data => {
+        return callback(null, data);
+      }).catch(er => {
+        return callback('Cannot parse data', null);
+      });
+    });
   }
 
   getPoolData = (poolAddress) => {
