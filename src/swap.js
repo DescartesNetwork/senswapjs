@@ -37,11 +37,11 @@ class Swap {
       return this.getPoolData(accountId).then(data => {
         return callback(null, data);
       }).catch(er => {
-        return this.getLPTData(accountId);
-      }).then(data => {
-        return callback(null, data);
-      }).catch(er => {
-        return callback('Cannot parse data', null);
+        return this.getLPTData(accountId).then(data => {
+          return callback(null, data);
+        }).catch(er => {
+          return callback('Cannot parse data', null);
+        });
       });
     });
   }
