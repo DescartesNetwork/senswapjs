@@ -53,6 +53,7 @@ class Swap {
       return this.connection.getAccountInfo(account.fromAddress(poolAddress)).then(({ data: poolData }) => {
         if (!poolData) return reject(`Cannot read data of ${result.address}`);
         const poolLayout = new soproxABI.struct(schema.POOL_SCHEMA);
+        if (poolData.length !== poolLayout.space) return reject('Unmatched buffer length');
         poolLayout.fromBuffer(poolData);
         let treasury = { address: poolLayout.value.treasury };
         let token = { address: poolLayout.value.token };
@@ -61,12 +62,14 @@ class Swap {
       }).then(({ data: tokenData }) => {
         if (!tokenData) return reject(`Cannot read data of ${result.token.address}`);
         const tokenLayout = new soproxABI.struct(schema.TOKEN_SCHEMA);
+        if (tokenData.length !== tokenLayout.space) return reject('Unmatched buffer length');
         tokenLayout.fromBuffer(tokenData);
         result.token = { ...result.token, ...tokenLayout.value };
         return this.connection.getAccountInfo(account.fromAddress(result.treasury.address));
       }).then(({ data: treasuryData }) => {
         if (!treasuryData) return reject(`Cannot read data of ${result.treasury.address}`);
         const treasuryLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
+        if (treasuryData.length !== treasuryLayout.space) return reject('Unmatched buffer length');
         treasuryLayout.fromBuffer(treasuryData);
         result.treasury = { ...result.treasury, ...treasuryLayout.value };
         return resolve(result);
@@ -83,6 +86,7 @@ class Swap {
       return this.connection.getAccountInfo(account.fromAddress(lptAddress)).then(({ data: lptData }) => {
         if (!lptData) return reject(`Cannot read data of ${result.address}`);
         const lptLayout = new soproxABI.struct(schema.LPT_SCHEMA);
+        if (lptData.length !== lptLayout.space) return reject('Unmatched buffer length');
         lptLayout.fromBuffer(lptData);
         let pool = { address: lptLayout.value.pool }
         result = { ...result, ...lptLayout.value, pool }
@@ -90,6 +94,7 @@ class Swap {
       }).then(({ data: poolData }) => {
         if (!poolData) return reject(`Cannot read data of ${result.pool.address}`);
         const poolLayout = new soproxABI.struct(schema.POOL_SCHEMA);
+        if (poolData.length !== poolLayout.space) return reject('Unmatched buffer length');
         poolLayout.fromBuffer(poolData);
         let treasury = { address: poolLayout.value.treasury }
         let token = { address: poolLayout.value.token }
@@ -98,12 +103,14 @@ class Swap {
       }).then(({ data: tokenData }) => {
         if (!tokenData) return reject(`Cannot read data of ${result.pool.token.address}`);
         const tokenLayout = new soproxABI.struct(schema.TOKEN_SCHEMA);
+        if (tokenData.length !== tokenLayout.space) return reject('Unmatched buffer length');
         tokenLayout.fromBuffer(tokenData);
         result.pool.token = { ...result.pool.token, ...tokenLayout.value }
         return this.connection.getAccountInfo(account.fromAddress(result.pool.treasury.address));
       }).then(({ data: treasuryData }) => {
         if (!treasuryData) return reject(`Cannot read data of ${result.pool.treasury.address}`);
         const treasuryLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
+        if (treasuryData.length !== treasuryLayout.space) return reject('Unmatched buffer length');
         treasuryLayout.fromBuffer(treasuryData);
         result.pool.treasury = { ...result.pool.treasury, ...treasuryLayout.value }
         return resolve(result);

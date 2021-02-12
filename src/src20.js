@@ -29,11 +29,11 @@ class SRC20 {
       return this.getTokenData(accountId).then(data => {
         return callback(null, data);
       }).catch(er => {
-        return this.getAccountData(accountId);
-      }).then(data => {
-        return callback(null, data);
-      }).catch(er => {
-        return callback('Cannot parse data', null);
+        return this.getAccountData(accountId).then(data => {
+          return callback(null, data);
+        }).catch(er => {
+          return callback('Cannot parse data', null);
+        });
       });
     });
   }
@@ -44,6 +44,7 @@ class SRC20 {
       return this.connection.getAccountInfo(account.fromAddress(tokenAddress)).then(({ data }) => {
         if (!data) return reject(`Cannot read data of ${tokenAddress}`);
         const tokenLayout = new soproxABI.struct(schema.TOKEN_SCHEMA);
+        if (data.length !== tokenLayout.space) return reject('Unmatched buffer length');
         tokenLayout.fromBuffer(data);
         const result = { address: tokenAddress, ...tokenLayout.value };
         return resolve(result);
@@ -60,6 +61,7 @@ class SRC20 {
       return this.connection.getAccountInfo(account.fromAddress(accountAddress)).then(({ data: accountData }) => {
         if (!accountData) return reject(`Cannot read data of ${result.address}`);
         const accountLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
+        if (accountData.length !== accountLayout.space) return reject('Unmatched buffer length');
         accountLayout.fromBuffer(accountData);
         let token = { address: accountLayout.value.token }
         result = { ...result, ...accountLayout.value, token }
@@ -67,6 +69,7 @@ class SRC20 {
       }).then(({ data: tokenData }) => {
         if (!tokenData) return reject(`Cannot read data of ${result.token.address}`);
         const tokenLayout = new soproxABI.struct(schema.TOKEN_SCHEMA);
+        if (tokenData.length !== tokenLayout.space) return reject('Unmatched buffer length');
         tokenLayout.fromBuffer(tokenData);
         result.token = { ...result.token, ...tokenLayout.value }
         return resolve(result);
