@@ -1,6 +1,10 @@
 const schema = {}
 
-schema.ACCOUNT_SCHEMA = [
+
+/**
+ * SRC20
+ */
+schema.SRC20_ACCOUNT_SCHEMA = [
   { key: 'owner', type: 'pub' },
   { key: 'token', type: 'pub' },
   { key: 'amount', type: 'u64' },
@@ -13,6 +17,10 @@ schema.TOKEN_SCHEMA = [
   { key: 'decimals', type: 'u8' },
   { key: 'initialized', type: 'bool' }
 ];
+
+/**
+ * SenSwap
+ */
 
 schema.POOL_SCHEMA = [
   { key: 'token', type: 'pub' },
@@ -31,7 +39,21 @@ schema.LPT_SCHEMA = [
   { key: 'initialized', type: 'bool' }
 ];
 
-schema.SPL = [
+/**
+ * SPL Token
+ */
+
+schema.MINT_SCHEMA = [
+  { key: "mint_authority_option", type: "u32" },
+  { key: "mint_authority", type: "pub" },
+  { key: "supply", type: "u64" },
+  { key: "decimals", type: "u8" },
+  { key: "is_initialized", type: "bool" },
+  { key: "freeze_authority_option", type: "u32" },
+  { key: "freeze_authority", type: "pub" },
+]
+
+schema.ACCOUNT_SCHEMA = [
   { key: "mint", type: "pub" },
   { key: "owner", type: "pub" },
   { key: "amount", type: "u64" },
@@ -43,6 +65,13 @@ schema.SPL = [
   { key: "delegated_amount", type: "u64" },
   { key: "close_authority_option", type: "u32" },
   { key: "close_authority", type: "pub" }
+]
+
+schema.MULTISIG_SCHEMA = [
+  { key: "m", type: "u8" },
+  { key: "n", type: "u8" },
+  { key: "is_initialized", type: "bool" },
+  { key: "signers", type: "[pub;11]" }
 ]
 
 module.exports = schema;

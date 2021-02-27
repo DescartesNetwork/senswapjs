@@ -1,6 +1,6 @@
 {
   "name": "senswapjs",
-  "version": "0.0.24",
+  "version": "0.0.25",
   "description": "An auxiliary JS library for Senswap",
   "main": "dist/index.js",
   "scripts": {
@@ -40,7 +40,7 @@
     "keccak256": "^1.0.2",
     "pbkdf2": "^3.1.1",
     "seedrandom": "^3.0.5",
-    "soprox-abi": "0.0.10",
+    "soprox-abi": "0.0.11",
     "tweetnacl": "^1.0.3"
   }
 }

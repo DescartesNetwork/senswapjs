@@ -6,6 +6,7 @@ const util = require('./util');
 const schema = require('./schema');
 const Swap = require('./swap');
 const SRC20 = require('./src20');
+const { SPLT, AuthorityType } = require('./splt');
 
 module.exports = {
   account, ...account,
@@ -16,4 +17,6 @@ module.exports = {
   schema, ...schema,
   Swap,
   SRC20,
+  SPLT,
+  AuthorityType,
 }

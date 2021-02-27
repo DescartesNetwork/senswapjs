@@ -68,7 +68,7 @@ class Swap {
         return this.connection.getAccountInfo(account.fromAddress(result.treasury.address));
       }).then(({ data: treasuryData }) => {
         if (!treasuryData) return reject(`Cannot read data of ${result.treasury.address}`);
-        const treasuryLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
+        const treasuryLayout = new soproxABI.struct(schema.SRC20_ACCOUNT_SCHEMA);
         if (treasuryData.length !== treasuryLayout.space) return reject('Unmatched buffer length');
         treasuryLayout.fromBuffer(treasuryData);
         result.treasury = { ...result.treasury, ...treasuryLayout.value };
@@ -109,7 +109,7 @@ class Swap {
         return this.connection.getAccountInfo(account.fromAddress(result.pool.treasury.address));
       }).then(({ data: treasuryData }) => {
         if (!treasuryData) return reject(`Cannot read data of ${result.pool.treasury.address}`);
-        const treasuryLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
+        const treasuryLayout = new soproxABI.struct(schema.SRC20_ACCOUNT_SCHEMA);
         if (treasuryData.length !== treasuryLayout.space) return reject('Unmatched buffer length');
         treasuryLayout.fromBuffer(treasuryData);
         result.pool.treasury = { ...result.pool.treasury, ...treasuryLayout.value }
@@ -155,7 +155,7 @@ class Swap {
       const tokenPublicKey = account.fromAddress(tokenAddress);
 
       const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
-      const treasurySpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
+      const treasurySpace = (new soproxABI.struct(schema.SRC20_ACCOUNT_SCHEMA)).space;
       const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
       return this.connection.getMinimumBalanceForRentExemption(poolSpace).then(lamports => {
         const instruction = SystemProgram.createAccount({
