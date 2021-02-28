@@ -209,19 +209,12 @@ class Swap {
   addLiquidity = (reserve, poolAddress, treasuryAddress, lptAccountOrlptAddress, srcAddress, payer) => {
     return new Promise((resolve, reject) => {
       if (!lptAccountOrlptAddress) return reject('Invalid LPT account/address');
-      if (account.isAddress(lptAccountOrlptAddress)) {
-        return this._addLiquidityWithLPTAddress(reserve, poolAddress, treasuryAddress, lptAccountOrlptAddress, srcAddress, payer).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
-      } else {
-        return this._addLiquidityWithLPTAccount(reserve, poolAddress, treasuryAddress, lptAccountOrlptAddress, srcAddress, payer).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
-      }
+      const _addLiquidity = account.isAddress(lptAccountOrlptAddress) ? this._addLiquidityWithLPTAddress : this._addLiquidityWithLPTAccount;
+      return _addLiquidity(reserve, poolAddress, treasuryAddress, lptAccountOrlptAddress, srcAddress, payer).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
   }
 

@@ -1,4 +1,7 @@
-const { SPLT, AuthorityType, fromSecretKey, createAccount } = require('../dist');
+const {
+  SPLT, AuthorityType, fromSecretKey, createAccount,
+  deriveAssociatedAddress, Lamports
+} = require('../dist');
 
 const PAYER = 'e06a1a17cf400f6c322e32377a9a7653eecf58f3eb0061023b743c689b43a5fa491573553e4afdcdcd1c94692a138dd2fd0dc0f6946ef798ba34ac1ad00b3720';
 const DELEGATE = '2cedf5aba2387360b2e1cbfc649200bbda25f3ca01920c1e97bf81a58b91302180f78b4aeb06b742fd36decdbc60df7dfba2a606ba11de6c987eed1d827572a0';
@@ -137,7 +140,34 @@ describe('SPLT library', function () {
       });
     });
 
-    it('Should initialize/close Account', function (done) {
+    it('Should initialize/close Account (associated)', function (done) {
+      const lamports = new Lamports();
+      const splt = new SPLT();
+      const payer = fromSecretKey(PAYER);
+      const wallet = createAccount();
+      let newAddress = null;
+      lamports.transfer(10000000, wallet.publicKey.toBase58(), payer).then(txId => {
+        return deriveAssociatedAddress(
+          wallet.publicKey.toBase58(),
+          MINT_ADDRESS,
+          splt.spltProgramId.toBase58(),
+          splt.splataProgramId.toBase58()
+        );
+      }).then(accountAddress => {
+        newAddress = accountAddress;
+        return splt.initializeAccount(accountAddress, MINT_ADDRESS, wallet);
+      }).then(txId => {
+        return splt.getAccountData(newAddress);
+      }).then(data => {
+        return splt.closeAccount(newAddress, wallet);
+      }).then(txId => {
+        return done();
+      }).catch(er => {
+        return done(er);
+      });
+    });
+
+    it('Should initialize/close Account (arbitrary)', function (done) {
       const splt = new SPLT();
       const newAccount = createAccount();
       const payer = fromSecretKey(PAYER);

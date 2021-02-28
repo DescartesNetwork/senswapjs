@@ -10,6 +10,7 @@ const schema = require('./schema');
 
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
 const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+const DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 
 const AuthorityType = {
   get MintTokens() {
@@ -29,11 +30,13 @@ const AuthorityType = {
 class SPLT {
   constructor(
     spltProgramAddress = DEFAULT_SPLT_PROGRAM_ADDRESS,
+    splataProgramAddress = DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS,
     nodeUrl = DEFAULT_NODEURL,
   ) {
     this.nodeUrl = nodeUrl;
     if (!account.isAddress(spltProgramAddress)) throw new Error('Invalid SPL-Token program address');
     this.spltProgramId = account.fromAddress(spltProgramAddress);
+    this.splataProgramId = account.fromAddress(splataProgramAddress);
     this.connection = this._createConnection();
   }
 
@@ -179,7 +182,19 @@ class SPLT {
     });
   }
 
-  initializeAccount = (newAccount, mintAddress, payer) => {
+  initializeAccount = (accountOrAddress, mintAddress, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!accountOrAddress) return reject('Invalid token account/address');
+      const _initializeAccount = account.isAddress(accountOrAddress) ? this._initializeAssociatedAccount : this._initializeArbitraryAccount;
+      return _initializeAccount(accountOrAddress, mintAddress, payer).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
+    })
+  }
+
+  _initializeArbitraryAccount = (newAccount, mintAddress, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
       const mintPublicKey = account.fromAddress(mintAddress);
@@ -213,6 +228,49 @@ class SPLT {
           ],
           programId: this.spltProgramId,
           data: layout.toBuffer()
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  _initializeAssociatedAccount = (accountAddress, mintAddress, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(accountAddress)) return reject('Invalid account address');
+      const accountPublicKey = account.fromAddress(accountAddress);
+      if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
+      const mintPublicKey = account.fromAddress(mintAddress);
+
+      return account.deriveAssociatedAddress(
+        payer.publicKey.toBase58(),
+        mintAddress,
+        this.spltProgramId.toBase58(),
+        this.splataProgramId.toBase58()
+      ).then(expectedAccountAddress => {
+        if (accountAddress !== expectedAccountAddress) return reject('Invalid associated account address');
+
+        const instruction = new TransactionInstruction({
+          keys: [
+            { pubkey: payer.publicKey, isSigner: true, isWritable: true },
+            { pubkey: accountPublicKey, isSigner: false, isWritable: true },
+            { pubkey: payer.publicKey, isSigner: false, isWritable: false },
+            { pubkey: mintPublicKey, isSigner: false, isWritable: false },
+            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
+            { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
+          ],
+          programId: this.splataProgramId,
+          data: Buffer.from([])
         });
         const transaction = new Transaction();
         transaction.add(instruction);

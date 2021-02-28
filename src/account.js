@@ -48,6 +48,37 @@ account.createPrefixedAccount = (prefix, debug = false) => {
   }
 }
 
+account.deriveAssociatedAddress = (
+  walletAddress,
+  mintAddress,
+  spltPromgramAddress,
+  splataProgramAddress
+) => {
+  return new Promise((resolve, reject) => {
+    if (!account.isAddress(walletAddress)) return reject('Invalid wallet address');
+    if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
+    if (!account.isAddress(spltPromgramAddress)) return reject('Invalid SPL token address');
+    if (!account.isAddress(splataProgramAddress)) return reject('Invalid SPL associated token account address');
+    const walletPublicKey = account.fromAddress(walletAddress);
+    const mintPublicKey = account.fromAddress(mintAddress);
+    const spltPublicKey = account.fromAddress(spltPromgramAddress);
+    const splataPublicKey = account.fromAddress(splataProgramAddress);
+
+    return PublicKey.findProgramAddress(
+      [
+        walletPublicKey.toBuffer(),
+        spltPublicKey.toBuffer(),
+        mintPublicKey.toBuffer(),
+      ],
+      splataPublicKey
+    ).then(([publicKey, _]) => {
+      return resolve(publicKey.toBase58());
+    }).catch(er => {
+      return reject(er);
+    });
+  });
+}
+
 account.fromAddress = (address) => {
   if (!address) return false;
   try {

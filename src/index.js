@@ -7,6 +7,7 @@ const schema = require('./schema');
 const Swap = require('./swap');
 const SRC20 = require('./src20');
 const { SPLT, AuthorityType } = require('./splt');
+const Lamports = require('./lamports');
 
 module.exports = {
   account, ...account,
@@ -19,4 +20,5 @@ module.exports = {
   SRC20,
   SPLT,
   AuthorityType,
+  Lamports,
 }

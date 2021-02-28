@@ -3,6 +3,8 @@ const {
   sendAndConfirmTransaction,
 } = require('@solana/web3.js');
 
+const account = require('./account');
+
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
 
 
@@ -17,7 +19,7 @@ class Lamports {
     return connection;
   }
 
-  getLamports = (address) => {
+  get = (address) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(address)) return reject('Invalid address');
       const publicKey = account.fromAddress(address);
@@ -29,12 +31,14 @@ class Lamports {
     });
   }
 
-  transferLamports = (lamports, dstAddress, payer) => {
+  transfer = (lamports, dstAddress, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
+      const dstPublicKey = account.fromAddress(dstAddress);
+
       const instruction = SystemProgram.transfer({
         fromPubkey: payer.publicKey,
-        toPubkey: account.fromAddress(dstAddress),
+        toPubkey: dstPublicKey,
         lamports
       });
       const transaction = new Transaction();
