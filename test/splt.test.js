@@ -1,5 +1,4 @@
-const { Account } = require('@solana/web3.js');
-const { SPLT, AuthorityType, fromSecretKey } = require('../dist');
+const { SPLT, AuthorityType, fromSecretKey, createAccount } = require('../dist');
 
 const PAYER = 'e06a1a17cf400f6c322e32377a9a7653eecf58f3eb0061023b743c689b43a5fa491573553e4afdcdcd1c94692a138dd2fd0dc0f6946ef798ba34ac1ad00b3720';
 const DELEGATE = '2cedf5aba2387360b2e1cbfc649200bbda25f3ca01920c1e97bf81a58b91302180f78b4aeb06b742fd36decdbc60df7dfba2a606ba11de6c987eed1d827572a0';
@@ -51,7 +50,7 @@ describe('SPLT library', function () {
 
     it('Should initialize Mint', function (done) {
       const splt = new SPLT();
-      const mint = new Account();
+      const mint = createAccount();
       const payer = fromSecretKey(PAYER);
       const freezeAuthorityAddress = null; // Unset freeze authority
       splt.initializeMint(9, freezeAuthorityAddress, mint, payer).then(txId => {
@@ -65,7 +64,7 @@ describe('SPLT library', function () {
 
     it('Should mint', function (done) {
       const splt = new SPLT();
-      const amount = 100000000000n;
+      const amount = 10000000000000n;
       const payer = fromSecretKey(PAYER);
       splt.mintTo(amount, MINT_ADDRESS, SRC_ADDRESS, payer).then(txId => {
         return splt.getAccountData(SRC_ADDRESS);
@@ -78,7 +77,7 @@ describe('SPLT library', function () {
 
     it('Should burn', function (done) {
       const splt = new SPLT();
-      const amount = 50000000000n;
+      const amount = 5000000000000n;
       const payer = fromSecretKey(PAYER);
       splt.burn(amount, SRC_ADDRESS, MINT_ADDRESS, payer).then(txId => {
         return splt.getAccountData(SRC_ADDRESS);
@@ -103,7 +102,7 @@ describe('SPLT library', function () {
 
     it('Should initialize/set/unset authority (to mint)', function (done) {
       const splt = new SPLT();
-      const mint = new Account();
+      const mint = createAccount();
       const payer = fromSecretKey(PAYER);
       const delegate = fromSecretKey(DELEGATE);
       const freezeAuthorityAddress = payer.publicKey.toBase58();
@@ -140,7 +139,7 @@ describe('SPLT library', function () {
 
     it('Should initialize/close Account', function (done) {
       const splt = new SPLT();
-      const newAccount = new Account();
+      const newAccount = createAccount();
       const payer = fromSecretKey(PAYER);
       splt.initializeAccount(newAccount, MINT_ADDRESS, payer).then(txId => {
         return splt.getAccountData(newAccount.publicKey.toBase58());
@@ -240,8 +239,8 @@ describe('SPLT library', function () {
 
     it('Should freeze/thaw account', function (done) {
       const splt = new SPLT();
-      const newAccount = new Account();
-      const mint = new Account();
+      const newAccount = createAccount();
+      const mint = createAccount();
       const payer = fromSecretKey(PAYER);
       const accountAddress = newAccount.publicKey.toBase58();
       const mintAddress = mint.publicKey.toBase58();
@@ -280,7 +279,7 @@ describe('SPLT library', function () {
 
     it('Should initialize MultiSig', function (done) {
       const splt = new SPLT();
-      const multiSig = new Account();
+      const multiSig = createAccount();
       const payer = fromSecretKey(PAYER);
       const delegate = fromSecretKey(DELEGATE);
       const signerAddresses = [payer.publicKey.toBase58(), delegate.publicKey.toBase58()]

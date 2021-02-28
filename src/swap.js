@@ -1,6 +1,6 @@
 const {
   Connection, PublicKey, Transaction,
-  SystemProgram, sendAndConfirmTransaction,
+  SystemProgram, sendAndConfirmTransaction, SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
 } = require('@solana/web3.js');
 const soproxABI = require('soprox-abi');
@@ -9,21 +9,21 @@ const account = require('./account');
 const schema = require('./schema');
 
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
-const DEFAULT_SWAP_PROGRAM_ADDRESS = '23Y2WwZY149zE7tcXrQA46Zfj3zvkkibHn3xCZ4qJBgi';
-const DEFAULT_TOKEN_PROGRAM_ADDRESS = 'JCbHuGZyQiC9abPpEHfs6W8evgumEYthpqqBsgDRewa8';
+const DEFAULT_SWAP_PROGRAM_ADDRESS = 'F5SvYWVLivzKc8XjoKaKxeXe2Yo8YZbJtbPbvq3b2sGj';
+const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
 
 class Swap {
   constructor(
-    nodeUrl = DEFAULT_NODEURL,
     swapProgramAddress = DEFAULT_SWAP_PROGRAM_ADDRESS,
-    tokenProgramAddress = DEFAULT_TOKEN_PROGRAM_ADDRESS
+    spltProgramAddress = DEFAULT_SPLT_PROGRAM_ADDRESS,
+    nodeUrl = DEFAULT_NODEURL,
   ) {
     this.nodeUrl = nodeUrl;
     if (!account.isAddress(swapProgramAddress)) throw new Error('Invalid swap program address');
-    if (!account.isAddress(tokenProgramAddress)) throw new Error('Invalid token program address');
+    if (!account.isAddress(spltProgramAddress)) throw new Error('Invalid SPL token program address');
     this.swapProgramId = account.fromAddress(swapProgramAddress);
-    this.tokenProgramId = account.fromAddress(tokenProgramAddress);
+    this.spltProgramId = account.fromAddress(spltProgramAddress);
     this.connection = this._createConnection();
   }
 
@@ -49,26 +49,28 @@ class Swap {
   getPoolData = (poolAddress) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(poolAddress)) return reject('Invalid address');
+      const poolPublicKey = account.fromAddress(poolAddress);
+
       let result = { address: poolAddress }
-      return this.connection.getAccountInfo(account.fromAddress(poolAddress)).then(({ data: poolData }) => {
+      return this.connection.getAccountInfo(poolPublicKey).then(({ data: poolData }) => {
         if (!poolData) return reject(`Cannot read data of ${result.address}`);
         const poolLayout = new soproxABI.struct(schema.POOL_SCHEMA);
         if (poolData.length !== poolLayout.space) return reject('Unmatched buffer length');
         poolLayout.fromBuffer(poolData);
         let treasury = { address: poolLayout.value.treasury };
-        let token = { address: poolLayout.value.token };
-        result = { ...result, ...poolLayout.value, treasury, token };
-        return this.connection.getAccountInfo(account.fromAddress(result.token.address));
-      }).then(({ data: tokenData }) => {
-        if (!tokenData) return reject(`Cannot read data of ${result.token.address}`);
-        const tokenLayout = new soproxABI.struct(schema.TOKEN_SCHEMA);
-        if (tokenData.length !== tokenLayout.space) return reject('Unmatched buffer length');
-        tokenLayout.fromBuffer(tokenData);
-        result.token = { ...result.token, ...tokenLayout.value };
+        let mint = { address: poolLayout.value.mint };
+        result = { ...result, ...poolLayout.value, treasury, mint };
+        return this.connection.getAccountInfo(account.fromAddress(result.mint.address));
+      }).then(({ data: mintData }) => {
+        if (!mintData) return reject(`Cannot read data of ${result.mint.address}`);
+        const mintLayout = new soproxABI.struct(schema.MINT_SCHEMA);
+        if (mintData.length !== mintLayout.space) return reject('Unmatched buffer length');
+        mintLayout.fromBuffer(mintData);
+        result.mint = { ...result.mint, ...mintLayout.value };
         return this.connection.getAccountInfo(account.fromAddress(result.treasury.address));
       }).then(({ data: treasuryData }) => {
         if (!treasuryData) return reject(`Cannot read data of ${result.treasury.address}`);
-        const treasuryLayout = new soproxABI.struct(schema.SRC20_ACCOUNT_SCHEMA);
+        const treasuryLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
         if (treasuryData.length !== treasuryLayout.space) return reject('Unmatched buffer length');
         treasuryLayout.fromBuffer(treasuryData);
         result.treasury = { ...result.treasury, ...treasuryLayout.value };
@@ -82,37 +84,19 @@ class Swap {
   getLPTData = (lptAddress) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(lptAddress)) return reject('Invalid address');
+      const lptPublicKey = account.fromAddress(lptAddress);
+
       let result = { address: lptAddress }
-      return this.connection.getAccountInfo(account.fromAddress(lptAddress)).then(({ data: lptData }) => {
+      return this.connection.getAccountInfo(lptPublicKey).then(({ data: lptData }) => {
         if (!lptData) return reject(`Cannot read data of ${result.address}`);
         const lptLayout = new soproxABI.struct(schema.LPT_SCHEMA);
         if (lptData.length !== lptLayout.space) return reject('Unmatched buffer length');
         lptLayout.fromBuffer(lptData);
-        let pool = { address: lptLayout.value.pool }
+        const pool = { address: lptLayout.value.pool }
         result = { ...result, ...lptLayout.value, pool }
-        return this.connection.getAccountInfo(account.fromAddress(result.pool.address));
-      }).then(({ data: poolData }) => {
-        if (!poolData) return reject(`Cannot read data of ${result.pool.address}`);
-        const poolLayout = new soproxABI.struct(schema.POOL_SCHEMA);
-        if (poolData.length !== poolLayout.space) return reject('Unmatched buffer length');
-        poolLayout.fromBuffer(poolData);
-        let treasury = { address: poolLayout.value.treasury }
-        let token = { address: poolLayout.value.token }
-        result.pool = { ...result.pool, ...poolLayout.value, treasury, token }
-        return this.connection.getAccountInfo(account.fromAddress(result.pool.token.address));
-      }).then(({ data: tokenData }) => {
-        if (!tokenData) return reject(`Cannot read data of ${result.pool.token.address}`);
-        const tokenLayout = new soproxABI.struct(schema.TOKEN_SCHEMA);
-        if (tokenData.length !== tokenLayout.space) return reject('Unmatched buffer length');
-        tokenLayout.fromBuffer(tokenData);
-        result.pool.token = { ...result.pool.token, ...tokenLayout.value }
-        return this.connection.getAccountInfo(account.fromAddress(result.pool.treasury.address));
-      }).then(({ data: treasuryData }) => {
-        if (!treasuryData) return reject(`Cannot read data of ${result.pool.treasury.address}`);
-        const treasuryLayout = new soproxABI.struct(schema.SRC20_ACCOUNT_SCHEMA);
-        if (treasuryData.length !== treasuryLayout.space) return reject('Unmatched buffer length');
-        treasuryLayout.fromBuffer(treasuryData);
-        result.pool.treasury = { ...result.pool.treasury, ...treasuryLayout.value }
+        return this.getPoolData(result.pool.address);
+      }).then(poolData => {
+        result.pool = { ...result.pool, ...poolData }
         return resolve(result);
       }).catch(er => {
         return reject(er);
@@ -120,43 +104,17 @@ class Swap {
     });
   }
 
-  newLPT = (lpt, payer) => {
-    return new Promise((resolve, reject) => {
-      const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
-      return this.connection.getMinimumBalanceForRentExemption(lptSpace).then(lamports => {
-        const instruction = SystemProgram.createAccount({
-          fromPubkey: payer.publicKey,
-          newAccountPubkey: lpt.publicKey,
-          lamports,
-          space: lptSpace,
-          programId: this.swapProgramId,
-        });
-        const transaction = new Transaction();
-        transaction.add(instruction);
-        return sendAndConfirmTransaction(
-          this.connection,
-          transaction,
-          [payer, lpt],
-          { skipPreflight: true, commitment: 'recent' });
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
-  }
-
-  newPool = (reserve, value, srcAddress, tokenAddress, pool, treasury, lpt, payer) => {
+  initializePool = (reserve, value, srcAddress, mintAddress, pool, treasury, lpt, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(srcAddress)) return reject('Invalid source address');
-      if (!account.isAddress(tokenAddress)) return reject('Invalid token address');
-
+      if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
       const srcPublicKey = account.fromAddress(srcAddress);
-      const tokenPublicKey = account.fromAddress(tokenAddress);
+      const mintPublicKey = account.fromAddress(mintAddress);
 
       const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
-      const treasurySpace = (new soproxABI.struct(schema.SRC20_ACCOUNT_SCHEMA)).space;
+      const treasurySpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
       const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
+
       return this.connection.getMinimumBalanceForRentExemption(poolSpace).then(lamports => {
         const instruction = SystemProgram.createAccount({
           fromPubkey: payer.publicKey,
@@ -180,7 +138,7 @@ class Swap {
           newAccountPubkey: treasury.publicKey,
           lamports,
           space: treasurySpace,
-          programId: this.tokenProgramId,
+          programId: this.spltProgramId,
         });
         const transaction = new Transaction();
         transaction.add(instruction);
@@ -209,7 +167,7 @@ class Swap {
       }).then(re => {
         const seed = [pool.publicKey.toBuffer()];
         return PublicKey.createProgramAddress(seed, this.swapProgramId);
-      }).then(tokenOwnerPublicKey => {
+      }).then(treasurerPublicKey => {
         const layout = new soproxABI.struct(
           [
             { key: 'code', type: 'u8' },
@@ -225,9 +183,10 @@ class Swap {
             { pubkey: treasury.publicKey, isSigner: true, isWritable: true },
             { pubkey: lpt.publicKey, isSigner: true, isWritable: true },
             { pubkey: srcPublicKey, isSigner: false, isWritable: true },
-            { pubkey: tokenPublicKey, isSigner: false, isWritable: false },
-            { pubkey: tokenOwnerPublicKey, isSigner: false, isWritable: false },
-            { pubkey: this.tokenProgramId, isSigner: false, isWritable: false },
+            { pubkey: mintPublicKey, isSigner: false, isWritable: false },
+            { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
+            { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()
@@ -247,24 +206,55 @@ class Swap {
     });
   }
 
-  addLiquidityWithNewLPT = (reserve, poolAddress, treasuryAddress, lptAccount, srcAddress, tokenAddress, payer) => {
+  addLiquidity = (reserve, poolAddress, treasuryAddress, lptAccountOrlptAddress, srcAddress, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!lptAccountOrlptAddress) return reject('Invalid LPT account/address');
+      if (account.isAddress(lptAccountOrlptAddress)) {
+        return this._addLiquidityWithLPTAddress(reserve, poolAddress, treasuryAddress, lptAccountOrlptAddress, srcAddress, payer).then(txId => {
+          return resolve(txId);
+        }).catch(er => {
+          return reject(er);
+        });
+      } else {
+        return this._addLiquidityWithLPTAccount(reserve, poolAddress, treasuryAddress, lptAccountOrlptAddress, srcAddress, payer).then(txId => {
+          return resolve(txId);
+        }).catch(er => {
+          return reject(er);
+        });
+      }
+    });
+  }
+
+  _addLiquidityWithLPTAccount = (reserve, poolAddress, treasuryAddress, lptAccount, srcAddress, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
       if (!account.isAddress(treasuryAddress)) return reject('Invalid treasury address');
       if (!account.isAddress(srcAddress)) return reject('Invalid source address');
-      if (!account.isAddress(tokenAddress)) return reject('Invalid token address');
-
       const poolPublicKey = account.fromAddress(poolAddress);
       const treasuryPublicKey = account.fromAddress(treasuryAddress);
       const srcPublicKey = account.fromAddress(srcAddress);
-      const tokenPublicKey = account.fromAddress(tokenAddress);
 
-      const layout = new soproxABI.struct(
-        [{ key: 'code', type: 'u8' }, { key: 'reserve', type: 'u64' }],
-        { code: 1, reserve }
-      );
-      const seed = [poolPublicKey.toBuffer()];
-      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(tokenOwnerPublicKey => {
+      const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
+      return this.connection.getMinimumBalanceForRentExemption(lptSpace).then(lamports => {
+        const instruction = SystemProgram.createAccount({
+          fromPubkey: payer.publicKey,
+          newAccountPubkey: lptAccount.publicKey,
+          lamports,
+          space: lptSpace,
+          programId: this.swapProgramId,
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer, lptAccount],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(txId => {
+        const layout = new soproxABI.struct(
+          [{ key: 'code', type: 'u8' }, { key: 'reserve', type: 'u64' }],
+          { code: 1, reserve }
+        );
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payer.publicKey, isSigner: true, isWritable: false },
@@ -272,9 +262,7 @@ class Swap {
             { pubkey: treasuryPublicKey, isSigner: false, isWritable: true },
             { pubkey: lptAccount.publicKey, isSigner: true, isWritable: true },
             { pubkey: srcPublicKey, isSigner: false, isWritable: true },
-            { pubkey: tokenPublicKey, isSigner: false, isWritable: false },
-            { pubkey: tokenOwnerPublicKey, isSigner: false, isWritable: false },
-            { pubkey: this.tokenProgramId, isSigner: false, isWritable: false },
+            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()
@@ -287,33 +275,31 @@ class Swap {
           [payer, lptAccount],
           { skipPreflight: true, commitment: 'recent' });
       }).then(txId => {
-        return resolve({ txId });
+        return resolve(txId);
       }).catch(er => {
         return reject(er);
-      });;
+      });
     });
   }
 
-  addLiquidity = (reserve, poolAddress, treasuryAddress, lptAddress, srcAddress, tokenAddress, payer) => {
+  _addLiquidityWithLPTAddress = (reserve, poolAddress, treasuryAddress, lptAddress, srcAddress, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
       if (!account.isAddress(treasuryAddress)) return reject('Invalid treasury address');
       if (!account.isAddress(lptAddress)) return reject('Invalid lpt address');
       if (!account.isAddress(srcAddress)) return reject('Invalid source address');
-      if (!account.isAddress(tokenAddress)) return reject('Invalid token address');
 
       const poolPublicKey = account.fromAddress(poolAddress);
       const treasuryPublicKey = account.fromAddress(treasuryAddress);
       const lptPublicKey = account.fromAddress(lptAddress);
       const srcPublicKey = account.fromAddress(srcAddress);
-      const tokenPublicKey = account.fromAddress(tokenAddress);
 
       const layout = new soproxABI.struct(
         [{ key: 'code', type: 'u8' }, { key: 'reserve', type: 'u64' }],
         { code: 1, reserve }
       );
       const seed = [poolPublicKey.toBuffer()];
-      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(tokenOwnerPublicKey => {
+      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(treasurerPublicKey => {
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payer.publicKey, isSigner: true, isWritable: false },
@@ -321,9 +307,7 @@ class Swap {
             { pubkey: treasuryPublicKey, isSigner: false, isWritable: true },
             { pubkey: lptPublicKey, isSigner: false, isWritable: true },
             { pubkey: srcPublicKey, isSigner: false, isWritable: true },
-            { pubkey: tokenPublicKey, isSigner: false, isWritable: false },
-            { pubkey: tokenOwnerPublicKey, isSigner: false, isWritable: false },
-            { pubkey: this.tokenProgramId, isSigner: false, isWritable: false },
+            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()
@@ -343,28 +327,23 @@ class Swap {
     });
   }
 
-  removeLiquidity = (lpt, poolAddress, treasuryAddress, lptAddress, dstAddress, tokenAddress, payer) => {
+  removeLiquidity = (lpt, poolAddress, treasuryAddress, lptAddress, dstAddress, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
       if (!account.isAddress(treasuryAddress)) return reject('Invalid treasury address');
       if (!account.isAddress(lptAddress)) return reject('Invalid lpt address');
       if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
-      if (!account.isAddress(tokenAddress)) return reject('Invalid token address');
 
       const poolPublicKey = account.fromAddress(poolAddress);
       const treasuryPublicKey = account.fromAddress(treasuryAddress);
       const lptPublicKey = account.fromAddress(lptAddress);
       const dstPublicKey = account.fromAddress(dstAddress);
-      const tokenPublicKey = account.fromAddress(tokenAddress);
       const layout = new soproxABI.struct(
-        [
-          { key: 'code', type: 'u8' },
-          { key: 'lpt', type: 'u64' },
-        ],
+        [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u64' }],
         { code: 2, lpt }
       );
       const seed = [poolPublicKey.toBuffer()];
-      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(tokenOwnerPublicKey => {
+      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(treasurerPublicKey => {
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payer.publicKey, isSigner: true, isWritable: false },
@@ -372,9 +351,8 @@ class Swap {
             { pubkey: treasuryPublicKey, isSigner: false, isWritable: true },
             { pubkey: lptPublicKey, isSigner: false, isWritable: true },
             { pubkey: dstPublicKey, isSigner: false, isWritable: true },
-            { pubkey: tokenPublicKey, isSigner: false, isWritable: false },
-            { pubkey: tokenOwnerPublicKey, isSigner: false, isWritable: false },
-            { pubkey: this.tokenProgramId, isSigner: false, isWritable: false },
+            { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()
@@ -399,51 +377,43 @@ class Swap {
     bidPoolAddress,
     bidTreasuryAddress,
     srcAddress,
-    bidTokenAddress,
     askPoolAddress,
     askTreasuryAddress,
     dstAddress,
-    askTokenAddress,
     payer,
   ) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(bidPoolAddress)) return reject('Invalid bid pool address');
       if (!account.isAddress(bidTreasuryAddress)) return reject('Invalid bid treasury address');
       if (!account.isAddress(srcAddress)) return reject('Invalid source address');
-      if (!account.isAddress(bidTokenAddress)) return reject('Invalid bid token address');
       if (!account.isAddress(askPoolAddress)) return reject('Invalid ask pool address');
       if (!account.isAddress(askTreasuryAddress)) return reject('Invalid ask treasury address');
       if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
-      if (!account.isAddress(askTokenAddress)) return reject('Invalid ask token address');
 
       const bidPoolPublicKey = account.fromAddress(bidPoolAddress);
       const bidTreasuryPublicKey = account.fromAddress(bidTreasuryAddress);
       const srcPublicKey = account.fromAddress(srcAddress);
-      const bidTokenPublicKey = account.fromAddress(bidTokenAddress);
       const askPoolPublicKey = account.fromAddress(askPoolAddress);
       const askTreasuryPublicKey = account.fromAddress(askTreasuryAddress);
       const dstPublicKey = account.fromAddress(dstAddress);
-      const askTokenPublicKey = account.fromAddress(askTokenAddress);
 
       const layout = new soproxABI.struct(
         [{ key: 'code', type: 'u8' }, { key: 'amount', type: 'u64' }],
         { code: 3, amount }
       );
       const seed = [askPoolPublicKey.toBuffer()];
-      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(askTokenOwnerPublicKey => {
+      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(askTreasurerPublicKey => {
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payer.publicKey, isSigner: true, isWritable: false },
             { pubkey: bidPoolPublicKey, isSigner: false, isWritable: true },
             { pubkey: bidTreasuryPublicKey, isSigner: false, isWritable: true },
             { pubkey: srcPublicKey, isSigner: false, isWritable: true },
-            { pubkey: bidTokenPublicKey, isSigner: false, isWritable: false },
             { pubkey: askPoolPublicKey, isSigner: false, isWritable: true },
             { pubkey: askTreasuryPublicKey, isSigner: false, isWritable: true },
             { pubkey: dstPublicKey, isSigner: false, isWritable: true },
-            { pubkey: askTokenPublicKey, isSigner: false, isWritable: false },
-            { pubkey: askTokenOwnerPublicKey, isSigner: false, isWritable: false },
-            { pubkey: this.tokenProgramId, isSigner: false, isWritable: false },
+            { pubkey: askTreasurerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()

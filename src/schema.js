@@ -23,20 +23,20 @@ schema.TOKEN_SCHEMA = [
  */
 
 schema.POOL_SCHEMA = [
-  { key: 'token', type: 'pub' },
+  { key: 'mint', type: 'pub' },
   { key: 'treasury', type: 'pub' },
   { key: 'reserve', type: 'u64' },
   { key: 'lpt', type: 'u64' },
   { key: 'fee_numerator', type: 'u64' },
   { key: 'fee_denominator', type: 'u64' },
-  { key: 'initialized', type: 'bool' }
+  { key: 'is_initialized', type: 'bool' }
 ];
 
 schema.LPT_SCHEMA = [
   { key: 'owner', type: 'pub' },
   { key: 'pool', type: 'pub' },
   { key: 'lpt', type: 'u64' },
-  { key: 'initialized', type: 'bool' }
+  { key: 'is_initialized', type: 'bool' }
 ];
 
 /**

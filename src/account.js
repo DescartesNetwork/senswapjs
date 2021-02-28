@@ -36,6 +36,18 @@ account.createStrictAccount = (programId) => {
   });
 }
 
+account.createPrefixedAccount = (prefix, debug = false) => {
+  if (!prefix || typeof prefix !== 'string') return new Account();
+  let counter = 0;
+  while (true) {
+    const newAccount = new Account();
+    const newAddress = newAccount.publicKey.toBase58();
+    const newPrefix = newAddress.substring(0, prefix.length);
+    if (debug) console.log(counter++);
+    if (newPrefix === prefix) return newAccount;
+  }
+}
+
 account.fromAddress = (address) => {
   if (!address) return false;
   try {
