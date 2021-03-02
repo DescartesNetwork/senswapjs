@@ -108,6 +108,28 @@ describe('Swap library', function () {
   });
 
   describe('Test constructor', function () {
+    it('Should fill configs', function (done) {
+      // PAYER
+      const payer = fromSecretKey(PAYER);
+      console.log('PAYER:', payer.publicKey.toBase58());
+      // Mint 1
+      console.log('MINT_ADDRESS_1:', MINT_ADDRESS_1);
+      console.log('ACCOUNT_ADDRESS_1:', ACCOUNT_ADDRESS_1);
+      // Mint 2
+      console.log('MINT_ADDRESS_2:', MINT_ADDRESS_2);
+      console.log('ACCOUNT_ADDRESS_2:', ACCOUNT_ADDRESS_2);
+      // Pool 1
+      console.log('POOL_ADDRESS_1:', POOL_ADDRESS_1);
+      console.log('TREASURY_ADDRESS_1:', TREASURY_ADDRESS_1);
+      console.log('LPT_ADDRESS_1:', LPT_ADDRESS_1);
+      // Pool 2
+      console.log('POOL_ADDRESS_2:', POOL_ADDRESS_2);
+      console.log('TREASURY_ADDRESS_2:', TREASURY_ADDRESS_2);
+      console.log('LPT_ADDRESS_2:', LPT_ADDRESS_2);
+
+      return done();
+    });
+
     it('Should be a valid default in constructor', function (done) {
       try {
         const swap = new Swap();

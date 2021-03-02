@@ -68,7 +68,9 @@ class SPLT {
       if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
       const mintPublicKey = account.fromAddress(mintAddress);
 
-      return this.connection.getAccountInfo(mintPublicKey).then(({ data }) => {
+      return this.connection.getAccountInfo(mintPublicKey).then(re => {
+        if (!re) return reject('Uninitialized mint');
+        const { data } = re;
         if (!data) return reject(`Cannot read data of ${mintAddress}`);
         const mintLayout = new soproxABI.struct(schema.MINT_SCHEMA);
         if (data.length !== mintLayout.space) return reject('Unmatched buffer length');
@@ -87,7 +89,9 @@ class SPLT {
       const accountPublicKey = account.fromAddress(accountAddress);
 
       let result = { address: accountAddress }
-      return this.connection.getAccountInfo(accountPublicKey).then(({ data: accountData }) => {
+      return this.connection.getAccountInfo(accountPublicKey).then(re => {
+        if (!re) return reject('Uninitialized account');
+        const { data: accountData } = re;
         if (!accountData) return reject(`Cannot read data of ${result.address}`);
         const accountLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
         if (accountData.length !== accountLayout.space) return reject('Unmatched buffer length');

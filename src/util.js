@@ -1,5 +1,6 @@
 const axios = require('axios');
 const seedrandom = require('seedrandom');
+const { LAMPORTS_PER_SOL } = require('@solana/web3.js');
 const emoji = require('../data/emoji.json');
 
 const TOTAL_EMOJI = emoji.length;
@@ -8,6 +9,8 @@ const TOTAL_EMOJI = emoji.length;
 const util = {}
 
 util.BASIC_TX_FEE = 0.000005;
+
+util.LAMPORTS_PER_SOL = LAMPORTS_PER_SOL;
 
 util.randEmoji = (seed) => {
   return emoji[Math.floor(seedrandom(seed)() * TOTAL_EMOJI)];

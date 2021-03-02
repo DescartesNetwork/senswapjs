@@ -52,7 +52,9 @@ class Swap {
       const poolPublicKey = account.fromAddress(poolAddress);
 
       let result = { address: poolAddress }
-      return this.connection.getAccountInfo(poolPublicKey).then(({ data: poolData }) => {
+      return this.connection.getAccountInfo(poolPublicKey).then(re => {
+        if (!re) return reject('Uninitialized pool');
+        const { data: poolData } = re;
         if (!poolData) return reject(`Cannot read data of ${result.address}`);
         const poolLayout = new soproxABI.struct(schema.POOL_SCHEMA);
         if (poolData.length !== poolLayout.space) return reject('Unmatched buffer length');
@@ -61,14 +63,18 @@ class Swap {
         let mint = { address: poolLayout.value.mint };
         result = { ...result, ...poolLayout.value, treasury, mint };
         return this.connection.getAccountInfo(account.fromAddress(result.mint.address));
-      }).then(({ data: mintData }) => {
+      }).then(re => {
+        if (!re) return reject('Uninitialized mint');
+        const { data: mintData } = re;
         if (!mintData) return reject(`Cannot read data of ${result.mint.address}`);
         const mintLayout = new soproxABI.struct(schema.MINT_SCHEMA);
         if (mintData.length !== mintLayout.space) return reject('Unmatched buffer length');
         mintLayout.fromBuffer(mintData);
         result.mint = { ...result.mint, ...mintLayout.value };
         return this.connection.getAccountInfo(account.fromAddress(result.treasury.address));
-      }).then(({ data: treasuryData }) => {
+      }).then(re => {
+        if (!re) return reject('Uninitialized account');
+        const { data: treasuryData } = re;
         if (!treasuryData) return reject(`Cannot read data of ${result.treasury.address}`);
         const treasuryLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
         if (treasuryData.length !== treasuryLayout.space) return reject('Unmatched buffer length');
@@ -87,7 +93,9 @@ class Swap {
       const lptPublicKey = account.fromAddress(lptAddress);
 
       let result = { address: lptAddress }
-      return this.connection.getAccountInfo(lptPublicKey).then(({ data: lptData }) => {
+      return this.connection.getAccountInfo(lptPublicKey).then(re => {
+        if (!re) return reject('Uninitialized lpt');
+        const { data: lptData } = re;
         if (!lptData) return reject(`Cannot read data of ${result.address}`);
         const lptLayout = new soproxABI.struct(schema.LPT_SCHEMA);
         if (lptData.length !== lptLayout.space) return reject('Unmatched buffer length');
