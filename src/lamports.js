@@ -19,6 +19,20 @@ class Lamports {
     return connection;
   }
 
+  watch = (address, callback) => {
+    if (!account.isAddress(address)) return reject('Invalid address');
+    const publicKey = account.fromAddress(address);
+    return this.connection.onAccountChange(publicKey, data => {
+      console.log(data);
+      const { accountId } = data;
+      return this.get(accountId);
+    }).then(lamports => {
+      return callback(null, lamports);
+    }).catch(er => {
+      return callback('Cannot parse data', null);
+    });
+  }
+
   get = (address) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(address)) return reject('Invalid address');
