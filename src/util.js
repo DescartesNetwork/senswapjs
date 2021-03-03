@@ -37,4 +37,18 @@ util.imgFromCGK = (cgk) => {
   });
 }
 
+util.symbolFromCGK = (cgk)=>{
+  return new Promise((resolve, reject) => {
+    return axios({
+      method: 'get',
+      url: cgk,
+    }).then(({ data: { symbol } }) => {
+      if (symbol) return resolve(symbol.toUpperCase());
+      else return reject('UNKOWN');
+    }).catch(er => {
+      return reject(er);
+    });
+  });
+}
+
 module.exports = util;
