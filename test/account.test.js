@@ -13,10 +13,10 @@ describe('Account library', function () {
     createPrefixedAccount(prefix, (addr) => {
       console.log(addr)
     }).then(acc => {
-      return done();
     }).catch(er => {
       return done(er);
     });
+    return done();
   });
 
   it('Should derive associated address', function (done) {

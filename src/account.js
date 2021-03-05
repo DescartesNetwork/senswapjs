@@ -40,8 +40,10 @@ account.createStrictAccount = (programId) => {
 account.createPrefixedAccount = (prefix, callback = () => { }) => {
   return new Promise((resolve, reject) => {
     return doUntil((cb) => {
-      const acc = new Account();
-      return cb(null, acc);
+      return setTimeout(() => {
+        const acc = new Account();
+        return cb(null, acc);
+      }, 0);
     }, (acc, cb) => {
       if (!prefix || typeof prefix !== 'string') return cb(null, true);
       const addr = acc.publicKey.toBase58();
