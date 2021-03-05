@@ -1,4 +1,5 @@
 const { Account, PublicKey } = require('@solana/web3.js');
+const { doUntil } = require('async');
 const ssKeystore = require('./keystore');
 
 
@@ -36,16 +37,22 @@ account.createStrictAccount = (programId) => {
   });
 }
 
-account.createPrefixedAccount = (prefix, debug = false) => {
-  if (!prefix || typeof prefix !== 'string') return new Account();
-  let counter = 0;
-  while (true) {
-    const newAccount = new Account();
-    const newAddress = newAccount.publicKey.toBase58();
-    const newPrefix = newAddress.substring(0, prefix.length);
-    if (debug) console.log(counter++);
-    if (newPrefix === prefix) return newAccount;
-  }
+account.createPrefixedAccount = (prefix, callback = () => { }) => {
+  return new Promise((resolve, reject) => {
+    return doUntil((cb) => {
+      const acc = new Account();
+      return cb(null, acc);
+    }, (acc, cb) => {
+      if (!prefix || typeof prefix !== 'string') return cb(null, true);
+      const addr = acc.publicKey.toBase58();
+      callback(addr);
+      const pref = addr.substring(0, prefix.length);
+      return cb(null, pref === prefix);
+    }, (er, acc) => {
+      if (er) return reject(er);
+      return resolve(acc);
+    });
+  });
 }
 
 account.deriveAssociatedAddress = (

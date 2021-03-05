@@ -9,13 +9,14 @@ const MINT_ADDRESS = '6Qvp2kKkZwPoNibncFPygiEJJd6sFP5JeHbtsQDyBqNN';
 
 describe('Account library', function () {
   it('Should create a prefixed account', function (done) {
-    try {
-      const prefix = 'S';
-      const newAccount = createPrefixedAccount(prefix);
+    const prefix = 'S';
+    createPrefixedAccount(prefix, (addr) => {
+      console.log(addr)
+    }).then(acc => {
       return done();
-    } catch (er) {
+    }).catch(er => {
       return done(er);
-    }
+    });
   });
 
   it('Should derive associated address', function (done) {

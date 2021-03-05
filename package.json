@@ -1,6 +1,6 @@
 {
   "name": "senswapjs",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "description": "An auxiliary JS library for Senswap",
   "main": "dist/index.js",
   "scripts": {
@@ -32,6 +32,7 @@
   "dependencies": {
     "@solana/web3.js": "^0.90.5",
     "aes-js": "^3.1.2",
+    "async": "^3.2.0",
     "axios": "^0.21.1",
     "bn.js": "^5.1.3",
     "bs58": "^4.0.1",
