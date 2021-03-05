@@ -21,6 +21,27 @@ util.toSymbol = (symbol) => {
   return symbol.join('').replace(/\u0000/g, '').replace(/-/g, '');
 }
 
+util.parseCGK = (cgk) => {
+  return new Promise((resolve, reject) => {
+    return axios({
+      method: 'get',
+      url: cgk,
+    }).then(({ data: {
+      image: { large, small, thumb },
+      symbol: refSymbol,
+      name,
+      platforms: { solana }
+    } }) => {
+      const icon = large || thumb || small;
+      const symbol = refSymbol.toUpperCase();
+      const address = solana;
+      return resolve({ icon, symbol, name, address });
+    }).catch(er => {
+      return reject(er);
+    });
+  });
+}
+
 util.imgFromCGK = (cgk) => {
   return new Promise((resolve, reject) => {
     return axios({
@@ -37,7 +58,7 @@ util.imgFromCGK = (cgk) => {
   });
 }
 
-util.symbolFromCGK = (cgk)=>{
+util.symbolFromCGK = (cgk) => {
   return new Promise((resolve, reject) => {
     return axios({
       method: 'get',
