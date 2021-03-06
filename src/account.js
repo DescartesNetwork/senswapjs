@@ -37,7 +37,7 @@ account.createStrictAccount = (programId) => {
   });
 }
 
-account.createPrefixedAccount = (prefix, callback = (a, c) => { }) => {
+account.createPrefixedAccount = (prefix, callback = (a, c) => { }, loose = true) => {
   return new Promise((resolve, reject) => {
     let stop = false;
     const cancel = () => {
@@ -55,7 +55,8 @@ account.createPrefixedAccount = (prefix, callback = (a, c) => { }) => {
       const addr = acc.publicKey.toBase58();
       callback(addr, cancel);
       const pref = addr.substring(0, prefix.length);
-      return cb(null, pref === prefix);
+      const ok = loose ? pref.toLowerCase() === prefix.toLowerCase() : pref === prefix;
+      return cb(null, ok);
     }, (er, acc) => {
       if (er) return reject(er);
       if (acc) return resolve(acc);

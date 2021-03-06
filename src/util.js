@@ -42,34 +42,4 @@ util.parseCGK = (cgk) => {
   });
 }
 
-util.imgFromCGK = (cgk) => {
-  return new Promise((resolve, reject) => {
-    return axios({
-      method: 'get',
-      url: cgk,
-    }).then(({ data: { image: { large, small, thumb } } }) => {
-      if (large) return resolve(large);
-      else if (thumb) return resolve(thumb);
-      else if (small) return resolve(small);
-      else return reject('No logo');
-    }).catch(er => {
-      return reject(er);
-    });
-  });
-}
-
-util.symbolFromCGK = (cgk) => {
-  return new Promise((resolve, reject) => {
-    return axios({
-      method: 'get',
-      url: cgk,
-    }).then(({ data: { symbol } }) => {
-      if (symbol) return resolve(symbol.toUpperCase());
-      else return reject('UNKOWN');
-    }).catch(er => {
-      return reject(er);
-    });
-  });
-}
-
 module.exports = util;
