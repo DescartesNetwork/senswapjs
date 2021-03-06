@@ -37,22 +37,28 @@ account.createStrictAccount = (programId) => {
   });
 }
 
-account.createPrefixedAccount = (prefix, callback = () => { }) => {
+account.createPrefixedAccount = (prefix, callback = (a, c) => { }) => {
   return new Promise((resolve, reject) => {
+    let stop = false;
+    const cancel = () => {
+      stop = true;
+    }
     return doUntil((cb) => {
       return setTimeout(() => {
         const acc = new Account();
+        if (stop) return cb(null, null)
         return cb(null, acc);
       }, 0);
     }, (acc, cb) => {
+      if (!acc) return cb(null, true);
       if (!prefix || typeof prefix !== 'string') return cb(null, true);
       const addr = acc.publicKey.toBase58();
-      callback(addr);
+      callback(addr, cancel);
       const pref = addr.substring(0, prefix.length);
       return cb(null, pref === prefix);
     }, (er, acc) => {
       if (er) return reject(er);
-      return resolve(acc);
+      if (acc) return resolve(acc);
     });
   });
 }

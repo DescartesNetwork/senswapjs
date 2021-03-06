@@ -1,14 +1,17 @@
+const fs = require('fs');
 const { Account } = require('@solana/web3.js');
 
-const prefix = process.argv[2];
+let distribution = {}
 let counter = 0;
-while (true) {
-  console.log(counter++);
+console.log(new Date())
+while (counter < 1000000) {
+  counter++;
+  if (!(counter % 10000)) console.log(counter);
   const account = new Account();
   const address = account.publicKey.toBase58();
-  if (!prefix || address.substring(0, prefix.length) == prefix) {
-    console.log(address);
-    console.log(Buffer.from(account.secretKey).toString('hex'));
-    break;
-  }
+  const prefix = address.substring(0, 4);
+  distribution[prefix] = (distribution[prefix] || 0) + 1;
 }
+console.log(new Date())
+
+fs.writeFileSync('./distribution.json', JSON.stringify(distribution, null, 2));

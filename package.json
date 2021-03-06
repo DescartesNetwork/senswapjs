@@ -1,6 +1,6 @@
 {
   "name": "senswapjs",
-  "version": "0.0.35",
+  "version": "0.0.36",
   "description": "An auxiliary JS library for Senswap",
   "main": "dist/index.js",
   "scripts": {
