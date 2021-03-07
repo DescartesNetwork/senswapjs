@@ -33,8 +33,9 @@ class Swap {
   }
 
   watchAndFetch = (callback) => {
-    return this.watch((er, { type, accountId }) => {
+    return this.watch((er, re) => {
       if (er) return callback(er, null);
+      const { type, accountId } = re;
       let getData = () => { }
       if (type === 'pool') getData = this.getPoolData;
       if (type === 'lpt') getData = this.getLPTData;
@@ -53,7 +54,7 @@ class Swap {
       let type = null;
       if (data.length === poolSpace) type = 'pool';
       if (data.length === lptSpace) type = 'lpt';
-      if (!type) return callback('Unmatched type');
+      if (!type) return callback('Unmatched type', null);
       return callback(null, { type, accountId });
     });
   }

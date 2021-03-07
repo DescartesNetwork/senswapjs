@@ -46,8 +46,9 @@ class SPLT {
   }
 
   watchAndFetch = (callback) => {
-    return this.watch((er, { type, accountId }) => {
+    return this.watch((er, re) => {
       if (er) return callback(er, null);
+      const { type, accountId } = re;
       let getData = () => { }
       if (type === 'accpunt') getData = this.getAccountData;
       if (type === 'mint') getData = this.getMintData;
@@ -69,7 +70,7 @@ class SPLT {
       if (data.length === accountSpace) type = 'account';
       if (data.length === mintSpace) type = 'mint';
       if (data.length === multisigSpace) type = 'multisig';
-      if (!type) return callback('Unmatched type');
+      if (!type) return callback('Unmatched type', null);
       return callback(null, { type, accountId });
     });
   }
