@@ -123,7 +123,9 @@ account.fromKeystore = (keystore, password) => {
 }
 
 account.sign = (data, secretKey) => {
+  if (typeof data !== 'string') throw new Error('Data must be a string');
   const keyPair = account.fromSecretKey(secretKey);
+  if (!keyPair) throw new Error('Invalid secret key');
   const address = keyPair.publicKey.toBase58();
   const bufSecretKey = keyPair.secretKey;
   const serializedData = Buffer.from(data);
@@ -133,6 +135,8 @@ account.sign = (data, secretKey) => {
 }
 
 account.verify = (address, sig, data = null) => {
+  if (!account.isAddress(address)) throw new Error('Invalid address');
+  if (typeof data !== 'string') throw new Error('Data must be a string');
   const publicKey = account.fromAddress(address).toBuffer();
   const bufSig = Buffer.from(sig, 'hex');
   const bufMsg = nacl.sign.open(bufSig, publicKey);
