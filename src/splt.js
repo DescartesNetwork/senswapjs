@@ -46,19 +46,18 @@ class SPLT {
   }
 
   watch = (callback) => {
-    return this.connection.onProgramAccountChange(this.spltProgramId, ({ accountId }) => {
-      return this.getAccountData(accountId).then(data => {
+    return this.connection.onProgramAccountChange(this.spltProgramId, ({ accountId, accountInfo: { data } }) => {
+      const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
+      const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
+      const multisigSpace = (new soproxABI.struct(schema.MULTISIG_SCHEMA)).space;
+      let getData = () => { }
+      if (data.length === accountSpace) getData = this.getAccountData;
+      if (data.length === mintSpace) getData = this.getMintData;
+      if (data.length === multisigSpace) getData = this.getMultiSigData;
+      return getData(accountId).then(data => {
         return callback(null, data);
       }).catch(er => {
-        return this.getMintData(accountId).then(data => {
-          return callback(null, data);
-        }).catch(er => {
-          return this.getMultiSigData(accountId).then(data => {
-            return callback(null, data);
-          }).catch(er => {
-            return callback('Cannot parse data', null);
-          });
-        });
+        return callback(er, null);
       });
     });
   }

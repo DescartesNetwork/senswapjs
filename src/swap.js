@@ -33,15 +33,16 @@ class Swap {
   }
 
   watch = (callback) => {
-    return this.connection.onProgramAccountChange(this.swapProgramId, ({ accountId }) => {
-      return this.getPoolData(accountId).then(data => {
+    return this.connection.onProgramAccountChange(this.swapProgramId, ({ accountId, accountInfo: { data } }) => {
+      const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
+      const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
+      let getData = () => { }
+      if (data.length === poolSpace) getData = this.getPoolData;
+      if (data.length === lptSpace) getData = this.getLPTData;
+      return getData(accountId).then(data => {
         return callback(null, data);
       }).catch(er => {
-        return this.getLPTData(accountId).then(data => {
-          return callback(null, data);
-        }).catch(er => {
-          return callback('Cannot parse data', null);
-        });
+        return callback(er, null);
       });
     });
   }
