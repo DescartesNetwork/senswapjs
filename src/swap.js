@@ -33,17 +33,28 @@ class Swap {
   }
 
   watch = (callback) => {
-    return this.connection.onProgramAccountChange(this.swapProgramId, ({ accountId, accountInfo: { data } }) => {
-      const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
-      const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
+    return this.pureWatch((er, { type, accountId }) => {
+      if (er) return callback(er, null);
       let getData = () => { }
-      if (data.length === poolSpace) getData = this.getPoolData;
-      if (data.length === lptSpace) getData = this.getLPTData;
+      if (type === 'pool') getData = this.getPoolData;
+      if (type === 'lpt') getData = this.getLPTData;
       return getData(accountId).then(data => {
         return callback(null, data);
       }).catch(er => {
         return callback(er, null);
       });
+    });
+  }
+
+  pureWatch = (callback) => {
+    return this.connection.onProgramAccountChange(this.swapProgramId, ({ accountId, accountInfo: { data } }) => {
+      const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
+      const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
+      let type = null;
+      if (data.length === poolSpace) type = 'pool';
+      if (data.length === lptSpace) type = 'lpt';
+      if (!type) return callback('Unmatched type');
+      return callback(null, { type, accountId });
     });
   }
 

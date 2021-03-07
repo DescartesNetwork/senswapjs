@@ -46,19 +46,31 @@ class SPLT {
   }
 
   watch = (callback) => {
-    return this.connection.onProgramAccountChange(this.spltProgramId, ({ accountId, accountInfo: { data } }) => {
-      const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
-      const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
-      const multisigSpace = (new soproxABI.struct(schema.MULTISIG_SCHEMA)).space;
+    return pureWatch((er, { type, accountId }) => {
+      if (er) return callback(er, null);
       let getData = () => { }
-      if (data.length === accountSpace) getData = this.getAccountData;
-      if (data.length === mintSpace) getData = this.getMintData;
-      if (data.length === multisigSpace) getData = this.getMultiSigData;
+      if (type === 'accpunt') getData = this.getAccountData;
+      if (type === 'mint') getData = this.getMintData;
+      if (type === 'multisig') getData = this.getMultiSigData;
       return getData(accountId).then(data => {
         return callback(null, data);
       }).catch(er => {
         return callback(er, null);
       });
+    });
+  }
+
+  pureWatch = (callback) => {
+    return this.connection.onProgramAccountChange(this.swapProgramId, ({ accountId, accountInfo: { data } }) => {
+      const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
+      const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
+      const multisigSpace = (new soproxABI.struct(schema.MULTISIG_SCHEMA)).space;
+      let type = null;
+      if (data.length === accountSpace) type = 'account';
+      if (data.length === mintSpace) type = 'mint';
+      if (data.length === multisigSpace) type = 'multisig';
+      if (!type) return callback('Unmatched type');
+      return callback(null, { type, accountId });
     });
   }
 
