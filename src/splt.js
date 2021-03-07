@@ -62,7 +62,7 @@ class SPLT {
   }
 
   watch = (callback) => {
-    return this.connection.onProgramAccountChange(this.swapProgramId, ({ accountId, accountInfo: { data } }) => {
+    return this.connection.onProgramAccountChange(this.spltProgramId, ({ accountId, accountInfo: { data } }) => {
       const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
       const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
       const multisigSpace = (new soproxABI.struct(schema.MULTISIG_SCHEMA)).space;
