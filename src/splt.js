@@ -45,8 +45,8 @@ class SPLT {
     return connection;
   }
 
-  watch = (callback) => {
-    return this.pureWatch((er, { type, accountId }) => {
+  watchAndFetch = (callback) => {
+    return this.watch((er, { type, accountId }) => {
       if (er) return callback(er, null);
       let getData = () => { }
       if (type === 'accpunt') getData = this.getAccountData;
@@ -60,7 +60,7 @@ class SPLT {
     });
   }
 
-  pureWatch = (callback) => {
+  watch = (callback) => {
     return this.connection.onProgramAccountChange(this.swapProgramId, ({ accountId, accountInfo: { data } }) => {
       const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
       const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;

@@ -32,8 +32,8 @@ class Swap {
     return connection;
   }
 
-  watch = (callback) => {
-    return this.pureWatch((er, { type, accountId }) => {
+  watchAndFetch = (callback) => {
+    return this.watch((er, { type, accountId }) => {
       if (er) return callback(er, null);
       let getData = () => { }
       if (type === 'pool') getData = this.getPoolData;
@@ -46,7 +46,7 @@ class Swap {
     });
   }
 
-  pureWatch = (callback) => {
+  watch = (callback) => {
     return this.connection.onProgramAccountChange(this.swapProgramId, ({ accountId, accountInfo: { data } }) => {
       const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
       const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
