@@ -46,7 +46,7 @@ class SPLT {
   }
 
   watch = (callback) => {
-    return pureWatch((er, { type, accountId }) => {
+    return this.pureWatch((er, { type, accountId }) => {
       if (er) return callback(er, null);
       let getData = () => { }
       if (type === 'accpunt') getData = this.getAccountData;
