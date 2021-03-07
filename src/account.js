@@ -1,5 +1,6 @@
 const { Account, PublicKey } = require('@solana/web3.js');
 const { doUntil } = require('async');
+const nacl = require('tweetnacl');
 const ssKeystore = require('./keystore');
 
 
@@ -119,6 +120,26 @@ account.fromKeystore = (keystore, password) => {
   const secretKey = ssKeystore.decrypt(keystore, password);
   if (!secretKey) return null;
   return account.fromSecretKey(secretKey);
+}
+
+account.sign = (data, secretKey) => {
+  const keyPair = account.fromSecretKey(secretKey);
+  const address = keyPair.publicKey.toBase58();
+  const bufSecretKey = keyPair.secretKey;
+  const serializedData = Buffer.from(data);
+  const bufSig = nacl.sign(serializedData, bufSecretKey);
+  const sig = Buffer.from(bufSig).toString('hex');
+  return { address, sig, data }
+}
+
+account.verify = (address, sig, data = null) => {
+  const publicKey = account.fromAddress(address).toBuffer();
+  const bufSig = Buffer.from(sig, 'hex');
+  const bufMsg = nacl.sign.open(bufSig, publicKey);
+  const msg = Buffer.from(bufMsg).toString('utf8');
+  if (!data) return msg;
+  if (data && data === msg) return true;
+  return false;
 }
 
 module.exports = account;
