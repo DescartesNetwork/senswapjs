@@ -136,7 +136,7 @@ account.sign = (data, secretKey) => {
 
 account.verify = (address, sig, data = null) => {
   if (!account.isAddress(address)) throw new Error('Invalid address');
-  if (typeof data !== 'string') throw new Error('Data must be a string');
+  if (typeof sig !== 'string') throw new Error('Signature must be a string');
   const publicKey = account.fromAddress(address).toBuffer();
   const bufSig = Buffer.from(sig, 'hex');
   const bufMsg = nacl.sign.open(bufSig, publicKey);
