@@ -1,6 +1,7 @@
 const axios = require('axios');
 const seedrandom = require('seedrandom');
 const { LAMPORTS_PER_SOL } = require('@solana/web3.js');
+const nacl = require('tweetnacl');
 const emoji = require('../data/emoji.json');
 
 const TOTAL_EMOJI = emoji.length;
@@ -40,6 +41,10 @@ util.parseCGK = (cgk) => {
       return reject(er);
     });
   });
+}
+
+util.salt = () => {
+  return Buffer.from(nacl.randomBytes(64)).toString('hex');
 }
 
 module.exports = util;
