@@ -5,6 +5,8 @@ const PRECISION = new BN('1000000000');
 const math = {}
 
 math.decimalize = (a, decimals) => {
+  if (!a) return 0;
+  if (decimals <= 0 || decimals % 1 != 0) return 0;
   const n = a.toString();
   const m = n.split('.');
   if (m.length > 2) throw new Error('Invalid number');
@@ -14,6 +16,8 @@ math.decimalize = (a, decimals) => {
 }
 
 math.undecimalize = (a, decimals) => {
+  if (!a) return 0;
+  if (decimals <= 0 || decimals % 1 != 0) return 0;
   const n = a.toString();
   if (n.length > decimals) return parseFloat(n.substring(0, n.length - decimals) + '.' + n.substring(n.length - decimals, n.length));
   if (n.length == decimals) return parseFloat('0.' + n);
@@ -21,8 +25,7 @@ math.undecimalize = (a, decimals) => {
 }
 
 math.div = (a, b) => {
-  if (!a) return 0;
-  if (!b) throw new Error('Divided by zero');
+  if (!a || !b) return 0;
   const ba = new BN(a);
   const bb = new BN(b);
   const bc = ba.mul(PRECISION).div(bb);
