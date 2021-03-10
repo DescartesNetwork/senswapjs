@@ -8,6 +8,7 @@ const Swap = require('./swap');
 const SRC20 = require('./src20');
 const { SPLT, AuthorityType } = require('./splt');
 const Lamports = require('./lamports');
+const oracle = require('./oracle');
 
 module.exports = {
   account, ...account,
@@ -21,4 +22,5 @@ module.exports = {
   SPLT,
   AuthorityType,
   Lamports,
+  oracle, ...oracle,
 }

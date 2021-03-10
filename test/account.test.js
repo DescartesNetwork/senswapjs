@@ -1,8 +1,7 @@
 const {
   createPrefixedAccount, fromSecretKey, deriveAssociatedAddress,
-  SPLT,
+  SPLT, sign, verify,
 } = require('../dist');
-const account = require('../src/account');
 
 const PAYER = 'e06a1a17cf400f6c322e32377a9a7653eecf58f3eb0061023b743c689b43a5fa491573553e4afdcdcd1c94692a138dd2fd0dc0f6946ef798ba34ac1ad00b3720';
 const MINT_ADDRESS = '6Qvp2kKkZwPoNibncFPygiEJJd6sFP5JeHbtsQDyBqNN';
@@ -35,8 +34,8 @@ describe('Account library', function () {
   });
 
   it('Should sign/verify', function (done) {
-    const { address, sig, data } = account.sign('🚀', PAYER);
-    const ok = account.verify(address, sig, data);
+    const { address, sig, data } = sign('🚀', PAYER);
+    const ok = verify(address, sig, data);
     if (!ok) return done('Incorrect signature');
     return done();
   });
