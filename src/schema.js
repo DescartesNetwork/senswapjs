@@ -27,8 +27,7 @@ schema.POOL_SCHEMA = [
   { key: 'treasury', type: 'pub' },
   { key: 'reserve', type: 'u64' },
   { key: 'lpt', type: 'u64' },
-  { key: 'fee_numerator', type: 'u64' },
-  { key: 'fee_denominator', type: 'u64' },
+  { key: 'fee', type: 'u64' },
   { key: 'is_initialized', type: 'bool' }
 ];
 
