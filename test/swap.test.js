@@ -205,7 +205,6 @@ describe('Swap library', function () {
         ACCOUNT_ADDRESS_2,
         payer
       ).then(txId => {
-        console.log(txId)
         return swap.getLPTData(LPT_ADDRESS_2);
       }).then(data => {
         return done();
