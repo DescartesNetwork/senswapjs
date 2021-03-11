@@ -9,7 +9,7 @@ const account = require('./account');
 const schema = require('./schema');
 
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
-const DEFAULT_SWAP_PROGRAM_ADDRESS = '2TBf4J1jtJhQLzFKdw4AjpACXW3UuRQubKuyU2VL9JzY';
+const DEFAULT_SWAP_PROGRAM_ADDRESS = '8WdhKpRbcewtxrNbPbWUCR5d3ui74SiVmTDWCs2f7A2X';
 const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
 
@@ -443,6 +443,40 @@ class Swap {
           { pubkey: payer.publicKey, isSigner: true, isWritable: false },
           { pubkey: srcLPTPublicKey, isSigner: false, isWritable: true },
           { pubkey: dstLPTPublicKey, isSigner: false, isWritable: true },
+        ],
+        programId: this.swapProgramId,
+        data: layout.toBuffer()
+      });
+      const transaction = new Transaction();
+      transaction.add(instruction);
+      return sendAndConfirmTransaction(
+        this.connection,
+        transaction,
+        [payer],
+        { skipPreflight: true, commitment: 'recent' }).then(txId => {
+          return resolve(txId);
+        }).catch(er => {
+          return reject(er);
+        });
+    });
+  }
+
+  closeLPT = (lptAddress, dstAddress, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(lptAddress)) return reject('Invalid LPT address');
+      if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
+      const lptPublicKey = account.fromAddress(lptAddress);
+      const dstPublicKey = account.fromAddress(dstAddress);
+
+      const layout = new soproxABI.struct(
+        [{ key: 'code', type: 'u8' }],
+        { code: 6 }
+      );
+      const instruction = new TransactionInstruction({
+        keys: [
+          { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+          { pubkey: lptPublicKey, isSigner: false, isWritable: true },
+          { pubkey: dstPublicKey, isSigner: false, isWritable: true },
         ],
         programId: this.swapProgramId,
         data: layout.toBuffer()

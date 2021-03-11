@@ -284,7 +284,28 @@ describe('Swap library', function () {
         return done();
       }).catch(er => {
         return done(er);
-      })
+      });
+    });
+
+    it('Should close Pool & close LPT', function (done) {
+      const swap = new Swap();
+      const payer = fromSecretKey(PAYER);
+      const dstAddress = payer.publicKey.toBase58();
+
+      swap.removeLiquidity(
+        80000000000n,
+        POOL_ADDRESS_2,
+        TREASURY_ADDRESS_2,
+        LPT_ADDRESS_2,
+        ACCOUNT_ADDRESS_2,
+        payer
+      ).then(txId => {
+        return swap.closeLPT(LPT_ADDRESS_2, dstAddress, payer);
+      }).then(txId => {
+        return done();
+      }).catch(er => {
+        return done(er);
+      });
     });
   });
 
