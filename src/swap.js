@@ -9,7 +9,7 @@ const account = require('./account');
 const schema = require('./schema');
 
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
-const DEFAULT_SWAP_PROGRAM_ADDRESS = 'HKoanfXKBje9aTeiUddeKCUXKpFtT6XytnA8HBfJVP83';
+const DEFAULT_SWAP_PROGRAM_ADDRESS = '2TBf4J1jtJhQLzFKdw4AjpACXW3UuRQubKuyU2VL9JzY';
 const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
 
