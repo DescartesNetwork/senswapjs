@@ -1,5 +1,5 @@
-const { 
-  _curve, curve, _reversedCurve, reversedCurve,
+const {
+  _curve, curve, _inverseCurve, inverseCurve,
   slippage, ratio,
 } = require('../dist');
 
@@ -19,9 +19,9 @@ describe('Oracle library', function () {
       return done();
     });
 
-    it('Should compute reversed alpha', function (done) {
-      const ra = _curve.reversedAlpha(2, 1).toString();
-      if (ra !== '2000000000000000000000000000000000000') return done('Wrong reversed alpha');
+    it('Should compute inverse alpha', function (done) {
+      const ra = _curve.inverseAlpha(2, 1).toString();
+      if (ra !== '2000000000000000000000000000000000000') return done('Wrong inverse alpha');
       return done();
     });
 
@@ -38,27 +38,27 @@ describe('Oracle library', function () {
     });
   });
 
-  describe('Reversed curve', function () {
+  describe('Inverse curve', function () {
     it('Should compute beta', function (done) {
-      const b = _reversedCurve.beta(2, 1).toString();
+      const b = _inverseCurve.beta(2, 1).toString();
       if (b !== '2000000000000000000000000000000000000') return done('Wrong beta');
       return done();
     });
 
-    it('Should compute reversed beta', function (done) {
-      const rb = _reversedCurve.reversedBeta(2, 1).toString();
-      if (rb !== '500000000000000000000000000000000000') return done('Wrong reversed beta');
+    it('Should compute inverse beta', function (done) {
+      const rb = _inverseCurve.inverseBeta(2, 1).toString();
+      if (rb !== '500000000000000000000000000000000000') return done('Wrong inverse beta');
       return done();
     });
 
-    it('Should compute reversed lambda', function (done) {
-      const rl = _reversedCurve.reversedLambda(2, 1).toString();
-      if (rl !== '2000000000000000000') return done('Wrong reversed lambda');
+    it('Should compute inverse lambda', function (done) {
+      const rl = _inverseCurve.inverseLambda(2, 1).toString();
+      if (rl !== '2000000000000000000') return done('Wrong inverse lambda');
       return done();
     });
 
     it('Should compute alpha', function (done) {
-      const a = _reversedCurve.alpha(2, 1, 2, 1);
+      const a = _inverseCurve.alpha(2, 1, 2, 1);
       if (a.toString() !== '1443000468164691395') return done('Wrong alpha');
       return done();
     });
@@ -71,8 +71,8 @@ describe('Oracle library', function () {
       return done();
     });
 
-    it('Should compute reversed curve', function (done) {
-      const c = reversedCurve(newAskReserve, bidReserve, bidLPT, askReserve, askLPT);
+    it('Should compute inverse curve', function (done) {
+      const c = inverseCurve(newAskReserve, bidReserve, bidLPT, askReserve, askLPT);
       if (c !== newBidReserve) return done('Wrong market state');
       return done();
     });

@@ -4,24 +4,15 @@ const { undecimalize } = require('./math');
 
 // BN.js patch: sqrt()
 BN.prototype.sqrt = function () {
-  const one = new BN(1);
-  const two = new BN(2);
-  if (this.lt(two)) return this;
-
-  let start = one;
-  let end = this;
-  let ans = one;
-  while (start.lte(end)) {
-    const mid = start.add(end).div(two);
-    if (mid.sqr().eq(this)) return mid;
-    if (mid.sqr().lt(this)) {
-      start = mid.add(one);
-      ans = mid;
-    } else {
-      end = mid.sub(one);
-    }
+  if (this.lt(new BN(2))) return this;
+  const bits = Math.floor((this.bitLength() + 1) / 2);
+  let start = (new BN(1)).shln(bits - 1);
+  let end = (new BN(1)).shln(bits + 1);
+  while (start.lt(end)) {
+    end = start.add(end).shrn(1);
+    start = this.div(end);
   }
-  return ans;
+  return end;
 }
 
 const PRECISION = new BN('1000000000000000000');
@@ -42,7 +33,7 @@ oracle._curve = {
     return br.mul(DOUBLE_PRECISION).div(nbr);
   },
   // Double precision
-  reversedAlpha: (newBidReserve, bidReserve) => {
+  inverseAlpha: (newBidReserve, bidReserve) => {
     const br = new BN(bidReserve);
     const nbr = new BN(newBidReserve);
     return nbr.mul(DOUBLE_PRECISION).div(br);
@@ -58,9 +49,9 @@ oracle._curve = {
     const two = new BN(2);
     const four = new BN(4);
     const alpha = oracle._curve.alpha(newBidReserve, bidReserve); // Double precision
-    const reversedAlpha = oracle._curve.reversedAlpha(newBidReserve, bidReserve); // Double precision
+    const inverseAlpha = oracle._curve.inverseAlpha(newBidReserve, bidReserve); // Double precision
     const lambda = oracle._curve.lambda(bidLPT, askLPT); // Single precision
-    const b = reversedAlpha.sub(alpha).div(lambda); // Single precision
+    const b = inverseAlpha.sub(alpha).div(lambda); // Single precision
     const delta = b.sqr().add(four.mul(DOUBLE_PRECISION)); // Double precision
     return delta.sqrt().sub(b).div(two); // Single precision
   },
@@ -73,11 +64,11 @@ oracle._curve = {
 }
 
 /**
- * Reversed Curve
+ * Inverse Curve
  * BETA -> ALPHA
  */
 
-oracle._reversedCurve = {
+oracle._inverseCurve = {
   // Double precision
   beta: (newAskReserve, askReserve) => {
     const ar = new BN(askReserve);
@@ -85,13 +76,13 @@ oracle._reversedCurve = {
     return nar.mul(DOUBLE_PRECISION).div(ar);
   },
   // Double precision
-  reversedBeta: (newAskReserve, askReserve) => {
+  inverseBeta: (newAskReserve, askReserve) => {
     const ar = new BN(askReserve);
     const nar = new BN(newAskReserve);
     return ar.mul(DOUBLE_PRECISION).div(nar);
   },
   // Single precision
-  reversedLambda: (bidLPT, askLPT) => {
+  inverseLambda: (bidLPT, askLPT) => {
     const bl = new BN(bidLPT);
     const al = new BN(askLPT);
     return bl.mul(PRECISION).div(al);
@@ -100,17 +91,17 @@ oracle._reversedCurve = {
   alpha: (newAskReserve, askReserve, bidLPT, askLPT) => {
     const two = new BN(2);
     const four = new BN(4);
-    const beta = oracle._reversedCurve.beta(newAskReserve, askReserve); // Double precision
-    const reversedBeta = oracle._reversedCurve.reversedBeta(newAskReserve, askReserve); // Double precision
-    const reversedLambda = oracle._reversedCurve.reversedLambda(bidLPT, askLPT); // Single precision
-    const b = reversedBeta.sub(beta).div(reversedLambda); // Single precision
+    const beta = oracle._inverseCurve.beta(newAskReserve, askReserve); // Double precision
+    const inverseBeta = oracle._inverseCurve.inverseBeta(newAskReserve, askReserve); // Double precision
+    const inverseLambda = oracle._inverseCurve.inverseLambda(bidLPT, askLPT); // Single precision
+    const b = inverseBeta.sub(beta).div(inverseLambda); // Single precision
     const delta = b.sqr().add(four.mul(DOUBLE_PRECISION)); // Double precision
     return delta.sqrt().sub(b).div(two); // Single precision
   },
   // Single precision
   exec: (newAskReserve, bidReserve, bidLPT, askReserve, askLPT) => {
     const br = new BN(bidReserve);
-    const alpha = oracle._reversedCurve.alpha(newAskReserve, askReserve, bidLPT, askLPT);
+    const alpha = oracle._inverseCurve.alpha(newAskReserve, askReserve, bidLPT, askLPT);
     return br.mul(DOUBLE_PRECISION).div(alpha);
   }
 }
@@ -124,8 +115,8 @@ oracle.curve = (newBidReserve, bidReserve, bidLPT, askReserve, askLPT) => {
   return BigInt(nar.div(PRECISION).toString());
 }
 
-oracle.reversedCurve = (newAskReserve, bidReserve, bidLPT, askReserve, askLPT) => {
-  const nbr = oracle._reversedCurve.exec(newAskReserve, bidReserve, bidLPT, askReserve, askLPT);
+oracle.inverseCurve = (newAskReserve, bidReserve, bidLPT, askReserve, askLPT) => {
+  const nbr = oracle._inverseCurve.exec(newAskReserve, bidReserve, bidLPT, askReserve, askLPT);
   return BigInt(nbr.div(PRECISION).toString());
 }
 
