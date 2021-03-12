@@ -7,9 +7,15 @@ describe('Math library', function () {
     return done();
   });
 
-  it('Should decimalize', function (done) {
+  it('Should decimalize #1', function (done) {
     const a = decimalize(5000000000, 9);
     if (a !== 5000000000000000000n) return done('Wrong result');
+    return done();
+  });
+
+  it('Should decimalize #2', function (done) {
+    const a = decimalize(1.1, 9);
+    if (a !== 1100000000n) return done('Wrong result');
     return done();
   });
 

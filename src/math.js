@@ -12,7 +12,7 @@ math.decimalize = (a, decimals) => {
   if (m.length > 2) throw new Error('Invalid number');
   if (m.length == 1) return BigInt(a) * BigInt(10 ** decimals);
   if (m[1].length >= decimals) return BigInt(m[0] + m[1].substring(0, decimals));
-  else return BigInt(m[0] + '0'.repeat(decimals - m[1].length) + m[1]);
+  else return BigInt(m[0] + m[1] + '0'.repeat(decimals - m[1].length));
 }
 
 math.undecimalize = (a, decimals) => {
