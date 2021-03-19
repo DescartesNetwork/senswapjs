@@ -9,7 +9,7 @@ const account = require('./account');
 const schema = require('./schema');
 
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
-const DEFAULT_SWAP_PROGRAM_ADDRESS = '8WdhKpRbcewtxrNbPbWUCR5d3ui74SiVmTDWCs2f7A2X';
+const DEFAULT_SWAP_PROGRAM_ADDRESS = 'GpaAjyw3yx9neiCrsv569T1LNzxDAnw8mReJDqB25Fua';
 const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
 
@@ -59,6 +59,102 @@ class Swap {
     });
   }
 
+  _getMintData = (mintAddress) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
+      const mintPublicKey = account.fromAddress(mintAddress);
+
+      let result = { address: mintAddress }
+      return this.connection.getAccountInfo(mintPublicKey).then(re => {
+        if (!re) return reject('Uninitialized mint');
+        const { data: mintData } = re;
+        if (!mintData) return reject(`Cannot read data of ${result.address}`);
+        const mintLayout = new soproxABI.struct(schema.MINT_SCHEMA);
+        if (mintData.length !== mintLayout.space) return reject('Unmatched buffer length');
+        mintLayout.fromBuffer(mintData);
+        result = { ...result, ...mintLayout.value };
+        return resolve(result);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  _getAccountData = (accountAddress) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(accountAddress)) return reject('Invalid account address');
+      const accountPublicKey = account.fromAddress(accountAddress);
+
+      let result = { address: accountAddress }
+      return this.connection.getAccountInfo(accountPublicKey).then(re => {
+        if (!re) return reject('Uninitialized mint');
+        const { data: accountData } = re;
+        if (!accountData) return reject(`Cannot read data of ${result.address}`);
+        const accountLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
+        if (accountData.length !== accountLayout.space) return reject('Unmatched buffer length');
+        accountLayout.fromBuffer(accountData);
+        result = { ...result, ...accountLayout.value };
+        return resolve(result);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  getDAOData = (daoAddress) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(daoAddress)) return reject('Invalid DAO address');
+      const daoPublicKey = account.fromAddress(daoAddress);
+
+      let result = { address: daoAddress }
+      return this.connection.getAccountInfo(daoPublicKey).then(re => {
+        if (!re) return reject('Uninitialized DAO');
+        const { data: daoData } = re;
+        if (!daoData) return reject(`Cannot read data of ${result.address}`);
+        const daoLayout = new soproxABI.struct(schema.DAO_SCHEMA);
+        if (daoData.length !== daoLayout.space) return reject('Unmatched buffer length');
+        daoLayout.fromBuffer(daoData);
+        result = { ...result, ...daoLayout.value };
+        return resolve(result);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  getNetworkData = (networkAddress) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
+      const networkPublicKey = account.fromAddress(networkAddress);
+
+      let result = { address: networkAddress }
+      return this.connection.getAccountInfo(networkPublicKey).then(re => {
+        if (!re) return reject('Uninitialized network');
+        const { data: networkData } = re;
+        if (!networkData) return reject(`Cannot read data of ${result.address}`);
+        const networkLayout = new soproxABI.struct(schema.NETWORK_SCHEMA);
+        if (networkData.length !== networkLayout.space) return reject('Unmatched buffer length');
+        networkLayout.fromBuffer(networkData);
+        let dao = { address: networkLayout.value.dao };
+        let primary = { address: networkLayout.value.primary };
+        let vault = { address: networkLayout.value.vault };
+        result = { ...result, ...networkLayout.value, dao, primary, vault };
+        return this.getDAOData(result.dao.address);
+      }).then(daoData => {
+        result.dao = { ...result.dao, ...daoData };
+        return this._getMintData(result.primary.address);
+      }).then(primaryData => {
+        result.primary = { ...result.primary, ...primaryData };
+        return this._getAccountData(result.vault.address);
+      }).then(vaultData => {
+        result.vault = { ...result.vault, ...vaultData };
+        return resolve(result);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
   getPoolData = (poolAddress) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
@@ -72,27 +168,15 @@ class Swap {
         const poolLayout = new soproxABI.struct(schema.POOL_SCHEMA);
         if (poolData.length !== poolLayout.space) return reject('Unmatched buffer length');
         poolLayout.fromBuffer(poolData);
-        let treasury = { address: poolLayout.value.treasury };
         let mint = { address: poolLayout.value.mint };
-        result = { ...result, ...poolLayout.value, treasury, mint };
-        return this.connection.getAccountInfo(account.fromAddress(result.mint.address));
-      }).then(re => {
-        if (!re) return reject('Uninitialized mint');
-        const { data: mintData } = re;
-        if (!mintData) return reject(`Cannot read data of ${result.mint.address}`);
-        const mintLayout = new soproxABI.struct(schema.MINT_SCHEMA);
-        if (mintData.length !== mintLayout.space) return reject('Unmatched buffer length');
-        mintLayout.fromBuffer(mintData);
-        result.mint = { ...result.mint, ...mintLayout.value };
-        return this.connection.getAccountInfo(account.fromAddress(result.treasury.address));
-      }).then(re => {
-        if (!re) return reject('Uninitialized account');
-        const { data: treasuryData } = re;
-        if (!treasuryData) return reject(`Cannot read data of ${result.treasury.address}`);
-        const treasuryLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
-        if (treasuryData.length !== treasuryLayout.space) return reject('Unmatched buffer length');
-        treasuryLayout.fromBuffer(treasuryData);
-        result.treasury = { ...result.treasury, ...treasuryLayout.value };
+        let treasury = { address: poolLayout.value.treasury };
+        result = { ...result, ...poolLayout.value, mint, treasury };
+        return this._getMintData(result.mint.address);
+      }).then(mintData => {
+        result.mint = { ...result.mint, ...mintData };
+        return this._getAccountData(result.treasury.address);
+      }).then(treasuryData => {
+        result.treasury = { ...result.treasury, ...treasuryData };
         return resolve(result);
       }).catch(er => {
         return reject(er);
@@ -125,10 +209,120 @@ class Swap {
     });
   }
 
-  initializePool = (reserve, value, srcAddress, mintAddress, pool, treasury, lpt, payer) => {
+  initializeNetwork = (network, primaryAddress, vault, dao, signerAddresses, mintAddresses, payer) => {
     return new Promise((resolve, reject) => {
+      if (!account.isAddress(primaryAddress)) return reject('Invalid primary address');
+      for (let signerAddress of signerAddresses) {
+        if (!account.isAddress(signerAddress)) return reject('Invalid signer address');
+      }
+      for (let mintAddress of mintAddresses) {
+        if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
+      }
+
+      const primaryPublicKey = account.fromAddress(primaryAddress);
+      const signerPublicKeys = signerAddresses.map(signerAddress => account.fromAddress(signerAddress));
+      const mintPublicKeys = mintAddresses.map(mintAddress => account.fromAddress(mintAddress));
+
+      const networkSpace = (new soproxABI.struct(schema.NETWORK_SCHEMA)).space;
+      const vaultSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
+      const daoSpace = (new soproxABI.struct(schema.DAO_SCHEMA)).space;
+
+      return this.connection.getMinimumBalanceForRentExemption(networkSpace).then(lamports => {
+        const instruction = SystemProgram.createAccount({
+          fromPubkey: payer.publicKey,
+          newAccountPubkey: network.publicKey,
+          lamports,
+          space: networkSpace,
+          programId: this.swapProgramId,
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer, network],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(re => {
+        return this.connection.getMinimumBalanceForRentExemption(vaultSpace);
+      }).then(lamports => {
+        const instruction = SystemProgram.createAccount({
+          fromPubkey: payer.publicKey,
+          newAccountPubkey: vault.publicKey,
+          lamports,
+          space: vaultSpace,
+          programId: this.spltProgramId,
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer, vault],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(re => {
+        return this.connection.getMinimumBalanceForRentExemption(daoSpace);
+      }).then(lamports => {
+        const instruction = SystemProgram.createAccount({
+          fromPubkey: payer.publicKey,
+          newAccountPubkey: dao.publicKey,
+          lamports,
+          space: daoSpace,
+          programId: this.swapProgramId,
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer, dao],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(re => {
+        const seed = [vault.publicKey.toBuffer()];
+        return PublicKey.createProgramAddress(seed, this.swapProgramId);
+      }).then(treasurerPublicKey => {
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 0 });
+        let _signers = signerPublicKeys.map(signerPublicKey => ({ pubkey: signerPublicKey, isSigner: false, isWritable: false }));
+        while (_signers.length < 10) _signers.push({ pubkey: new PublicKey(), isSigner: false, isWritable: false });
+        const _mints = mintPublicKeys.map(mintPublicKey => ({ pubkey: mintPublicKey, isSigner: false, isWritable: false }));
+        while (_mints.length < 10) _mints.push({ pubkey: new PublicKey(), isSigner: false, isWritable: false });
+        const instruction = new TransactionInstruction({
+          keys: [
+            { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+            { pubkey: network.publicKey, isSigner: true, isWritable: true },
+            { pubkey: primaryPublicKey, isSigner: false, isWritable: false },
+            { pubkey: vault.publicKey, isSigner: true, isWritable: true },
+            { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: dao.publicKey, isSigner: true, isWritable: true },
+            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
+            { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
+            ..._signers,
+            ..._mints
+          ],
+          programId: this.swapProgramId,
+          data: layout.toBuffer()
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer, network, vault, dao],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  initializePool = (reserve, value, networkAddress, pool, treasury, lpt, srcAddress, mintAddress, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
       if (!account.isAddress(srcAddress)) return reject('Invalid source address');
       if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
+
+      const networkPublicKey = account.fromAddress(networkAddress);
       const srcPublicKey = account.fromAddress(srcAddress);
       const mintPublicKey = account.fromAddress(mintAddress);
 
@@ -193,13 +387,14 @@ class Swap {
           [
             { key: 'code', type: 'u8' },
             { key: 'reserve', type: 'u64' },
-            { key: 'lpt', type: 'u64' },
+            { key: 'lpt', type: 'u128' },
           ],
-          { code: 0, reserve, lpt: value }
+          { code: 1, reserve, lpt: value }
         );
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+            { pubkey: networkPublicKey, isSigner: false, isWritable: true },
             { pubkey: pool.publicKey, isSigner: true, isWritable: true },
             { pubkey: treasury.publicKey, isSigner: true, isWritable: true },
             { pubkey: lpt.publicKey, isSigner: true, isWritable: true },
@@ -249,10 +444,7 @@ class Swap {
           [payer, lpt],
           { skipPreflight: true, commitment: 'recent' });
       }).then(txId => {
-        const layout = new soproxABI.struct(
-          [{ key: 'code', type: 'u8' }],
-          { code: 1 }
-        );
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 2 });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payer.publicKey, isSigner: true, isWritable: false },
@@ -273,7 +465,7 @@ class Swap {
         return resolve(txId);
       }).catch(er => {
         return reject(er);
-      })
+      });
     });
   }
 
@@ -369,37 +561,57 @@ class Swap {
 
   swap = (
     amount,
+    networkAddress,
     bidPoolAddress,
     bidTreasuryAddress,
     srcAddress,
     askPoolAddress,
     askTreasuryAddress,
     dstAddress,
+    senPoolAddress,
+    senTreasuryAddress,
+    vaultAddress,
     payer,
   ) => {
     return new Promise((resolve, reject) => {
+      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
       if (!account.isAddress(bidPoolAddress)) return reject('Invalid bid pool address');
       if (!account.isAddress(bidTreasuryAddress)) return reject('Invalid bid treasury address');
       if (!account.isAddress(srcAddress)) return reject('Invalid source address');
       if (!account.isAddress(askPoolAddress)) return reject('Invalid ask pool address');
       if (!account.isAddress(askTreasuryAddress)) return reject('Invalid ask treasury address');
       if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
+      if (!account.isAddress(senPoolAddress)) return reject('Invalid sen pool address');
+      if (!account.isAddress(senTreasuryAddress)) return reject('Invalid sen treasury address');
+      if (!account.isAddress(vaultAddress)) return reject('Invalid vault address');
+      const networkPublicKey = account.fromAddress(networkAddress);
       const bidPoolPublicKey = account.fromAddress(bidPoolAddress);
       const bidTreasuryPublicKey = account.fromAddress(bidTreasuryAddress);
       const srcPublicKey = account.fromAddress(srcAddress);
       const askPoolPublicKey = account.fromAddress(askPoolAddress);
       const askTreasuryPublicKey = account.fromAddress(askTreasuryAddress);
       const dstPublicKey = account.fromAddress(dstAddress);
+      const senPoolPublicKey = account.fromAddress(senPoolAddress);
+      const senTreasuryPublicKey = account.fromAddress(senTreasuryAddress);
+      const vaultPublicKey = account.fromAddress(vaultAddress);
 
       const layout = new soproxABI.struct(
         [{ key: 'code', type: 'u8' }, { key: 'amount', type: 'u64' }],
-        { code: 4, amount }
+        { code: 5, amount }
       );
-      const seed = [askPoolPublicKey.toBuffer()];
-      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(askTreasurerPublicKey => {
+      let askTreasurerPublicKey = '';
+      let senTreasurerPublicKey = '';
+      const ask_seed = [askPoolPublicKey.toBuffer()];
+      return PublicKey.createProgramAddress(ask_seed, this.swapProgramId).then(re => {
+        askTreasurerPublicKey = re;
+        const sen_seed = [senPoolPublicKey.toBuffer()];
+        return PublicKey.createProgramAddress(sen_seed, this.swapProgramId);
+      }).then(re => {
+        senTreasurerPublicKey = re;
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+            { pubkey: networkPublicKey, isSigner: false, isWritable: false },
             { pubkey: bidPoolPublicKey, isSigner: false, isWritable: true },
             { pubkey: bidTreasuryPublicKey, isSigner: false, isWritable: true },
             { pubkey: srcPublicKey, isSigner: false, isWritable: true },
@@ -407,6 +619,10 @@ class Swap {
             { pubkey: askTreasuryPublicKey, isSigner: false, isWritable: true },
             { pubkey: dstPublicKey, isSigner: false, isWritable: true },
             { pubkey: askTreasurerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: senPoolPublicKey, isSigner: false, isWritable: true },
+            { pubkey: senTreasuryPublicKey, isSigner: false, isWritable: true },
+            { pubkey: vaultPublicKey, isSigner: false, isWritable: true },
+            { pubkey: senTreasurerPublicKey, isSigner: false, isWritable: false },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,

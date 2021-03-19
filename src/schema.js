@@ -22,19 +22,55 @@ schema.TOKEN_SCHEMA = [
  * SenSwap
  */
 
+schema.DAO_SCHEMA = [
+  { key: 'signers', type: '[pub;11]' },
+  { key: 'is_initialized', type: 'bool' }
+];
+
+schema.NETWORK_STATE = {
+  get Uninitialized() {
+    return 0;
+  },
+  get Initialized() {
+    return 1;
+  },
+  get Activated() {
+    return 2;
+  }
+}
+schema.NETWORK_SCHEMA = [
+  { key: 'dao', type: 'pub' },
+  { key: 'primary', type: 'pub' },
+  { key: 'vault', type: 'pub' },
+  { key: 'mints', type: '[pub;11]' },
+  { key: 'state', type: 'u8' }
+];
+
+schema.POOL_STATE = {
+  get Uninitialized() {
+    return 0;
+  },
+  get Initialized() {
+    return 1;
+  },
+  get Frozen() {
+    return 2;
+  }
+}
 schema.POOL_SCHEMA = [
+  { key: 'owner', type: 'pub' },
+  { key: 'network', type: 'pub' },
   { key: 'mint', type: 'pub' },
   { key: 'treasury', type: 'pub' },
   { key: 'reserve', type: 'u64' },
-  { key: 'lpt', type: 'u64' },
-  { key: 'fee', type: 'u64' },
-  { key: 'is_initialized', type: 'bool' }
+  { key: 'lpt', type: 'u128' },
+  { key: 'state', type: 'u8' }
 ];
 
 schema.LPT_SCHEMA = [
   { key: 'owner', type: 'pub' },
   { key: 'pool', type: 'pub' },
-  { key: 'lpt', type: 'u64' },
+  { key: 'lpt', type: 'u128' },
   { key: 'is_initialized', type: 'bool' }
 ];
 
@@ -52,6 +88,17 @@ schema.MINT_SCHEMA = [
   { key: "freeze_authority", type: "pub" },
 ]
 
+schema.ACCOUNT_STATE = {
+  get Uninitialized() {
+    return 0;
+  },
+  get Initialized() {
+    return 1;
+  },
+  get Frozen() {
+    return 2;
+  }
+}
 schema.ACCOUNT_SCHEMA = [
   { key: "mint", type: "pub" },
   { key: "owner", type: "pub" },
