@@ -9,7 +9,7 @@ const account = require('./account');
 const schema = require('./schema');
 
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
-const DEFAULT_SWAP_PROGRAM_ADDRESS = 'GpaAjyw3yx9neiCrsv569T1LNzxDAnw8mReJDqB25Fua';
+const DEFAULT_SWAP_PROGRAM_ADDRESS = 'Dm5Eq3fk8bCHtQazY6edRH2LbqFq2RKZbnxiTBSTZTT4';
 const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
 
@@ -677,9 +677,77 @@ class Swap {
     });
   }
 
-  freezePool = () => { }
+  freezePool = (daoAddress, networkAddress, poolAddress, signers, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(daoAddress)) return reject('Invalid dao address');
+      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
+      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
 
-  thawPool = () => { }
+      const daoPublicKey = account.fromAddress(daoAddress);
+      const networkPublicKey = account.fromAddress(networkAddress);
+      const poolPublicKey = account.fromAddress(poolAddress);
+
+      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 7 });
+      let _signers = signers.map(signer => ({ pubkey: signer.publicKey, isSigner: true, isWritable: false }));
+      const instruction = new TransactionInstruction({
+        keys: [
+          { pubkey: daoPublicKey, isSigner: false, isWritable: false },
+          { pubkey: networkPublicKey, isSigner: false, isWritable: false },
+          { pubkey: poolPublicKey, isSigner: false, isWritable: true },
+          ..._signers,
+        ],
+        programId: this.swapProgramId,
+        data: layout.toBuffer()
+      });
+      const transaction = new Transaction();
+      transaction.add(instruction);
+      return sendAndConfirmTransaction(
+        this.connection,
+        transaction,
+        [payer, ...signers],
+        { skipPreflight: true, commitment: 'recent' }).then(txId => {
+          return resolve(txId);
+        }).catch(er => {
+          return reject(er);
+        });
+    });
+  }
+
+  thawPool = (daoAddress, networkAddress, poolAddress, signers, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(daoAddress)) return reject('Invalid dao address');
+      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
+      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
+
+      const daoPublicKey = account.fromAddress(daoAddress);
+      const networkPublicKey = account.fromAddress(networkAddress);
+      const poolPublicKey = account.fromAddress(poolAddress);
+
+      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 8 });
+      let _signers = signers.map(signer => ({ pubkey: signer.publicKey, isSigner: true, isWritable: false }));
+      const instruction = new TransactionInstruction({
+        keys: [
+          { pubkey: daoPublicKey, isSigner: false, isWritable: false },
+          { pubkey: networkPublicKey, isSigner: false, isWritable: false },
+          { pubkey: poolPublicKey, isSigner: false, isWritable: true },
+          ..._signers,
+        ],
+        programId: this.swapProgramId,
+        data: layout.toBuffer()
+      });
+      const transaction = new Transaction();
+      transaction.add(instruction);
+      return sendAndConfirmTransaction(
+        this.connection,
+        transaction,
+        [payer, ...signers],
+        { skipPreflight: true, commitment: 'recent' }).then(txId => {
+          return resolve(txId);
+        }).catch(er => {
+          return reject(er);
+        });
+    });
+  }
 
   addSigner = () => { }
 

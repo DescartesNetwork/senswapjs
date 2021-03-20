@@ -487,4 +487,33 @@ describe('Swap library', function () {
     });
   });
 
+  describe('Test DAO', function () {
+    it('Should freeze/thaw pool', function (done) {
+      const swap = new Swap();
+      const payer = fromSecretKey(PAYER);
+      const signers = [payer];
+      swap.freezePool(
+        DAO_ADDRESS,
+        NETWORK_ADDRESS,
+        POOL_ADDRESS_2,
+        signers,
+        payer
+      ).then(txId => {
+        return swap.thawPool(
+          DAO_ADDRESS,
+          NETWORK_ADDRESS,
+          POOL_ADDRESS_2,
+          signers,
+          payer
+        )
+      }).then(txId => {
+        return swap.getPoolData(POOL_ADDRESS_2);
+      }).then(data => {
+        return done();
+      }).catch(er => {
+        return done(er);
+      });
+    });
+  });
+
 });
