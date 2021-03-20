@@ -677,6 +677,16 @@ class Swap {
     });
   }
 
+  freezePool = () => { }
+
+  thawPool = () => { }
+
+  addSigner = () => { }
+
+  replaceSigner = () => { }
+
+  removeSigner = () => { }
+
   closeLPT = (lptAddress, dstAddress, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(lptAddress)) return reject('Invalid LPT address');
