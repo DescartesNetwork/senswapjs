@@ -514,6 +514,49 @@ describe('Swap library', function () {
         return done(er);
       });
     });
+
+    it('Should add/replace/remove signer', function (done) {
+      const swap = new Swap();
+      const payer = fromSecretKey(PAYER);
+      const signers = [payer];
+      const oldSigner = createAccount();
+      const newSigner = createAccount();
+      const oldSignerAddress = oldSigner.publicKey.toBase58();
+      const newSignerAddress = newSigner.publicKey.toBase58();
+      swap.addSigner(
+        DAO_ADDRESS,
+        NETWORK_ADDRESS,
+        oldSignerAddress,
+        signers,
+        payer
+      ).then(txId => {
+        signers.push(oldSigner);
+        return swap.replaceSigner(
+          DAO_ADDRESS,
+          NETWORK_ADDRESS,
+          oldSignerAddress,
+          newSignerAddress,
+          signers,
+          payer
+        );
+      }).then(txId => {
+        signers.pop(oldSigner);
+        signers.push(newSigner);
+        return swap.removeSigner(
+          DAO_ADDRESS,
+          NETWORK_ADDRESS,
+          newSignerAddress,
+          signers,
+          payer
+        );
+      }).then(txId => {
+        return swap.getDAOData(DAO_ADDRESS);
+      }).then(data => {
+        return done();
+      }).catch(er => {
+        return done(er);
+      });
+    });
   });
 
 });
