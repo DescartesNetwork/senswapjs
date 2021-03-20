@@ -483,34 +483,31 @@ class Swap {
 
       const layout = new soproxABI.struct(
         [{ key: 'code', type: 'u8' }, { key: 'reserve', type: 'u64' }],
-        { code: 2, reserve }
+        { code: 3, reserve }
       );
-      const seed = [poolPublicKey.toBuffer()];
-      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(treasurerPublicKey => {
-        const instruction = new TransactionInstruction({
-          keys: [
-            { pubkey: payer.publicKey, isSigner: true, isWritable: false },
-            { pubkey: poolPublicKey, isSigner: false, isWritable: true },
-            { pubkey: treasuryPublicKey, isSigner: false, isWritable: true },
-            { pubkey: lptPublicKey, isSigner: false, isWritable: true },
-            { pubkey: srcPublicKey, isSigner: false, isWritable: true },
-            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
-          ],
-          programId: this.swapProgramId,
-          data: layout.toBuffer()
-        });
-        const transaction = new Transaction();
-        transaction.add(instruction);
-        return sendAndConfirmTransaction(
-          this.connection,
-          transaction,
-          [payer],
-          { skipPreflight: true, commitment: 'recent' });
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
+      const instruction = new TransactionInstruction({
+        keys: [
+          { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+          { pubkey: poolPublicKey, isSigner: false, isWritable: true },
+          { pubkey: treasuryPublicKey, isSigner: false, isWritable: true },
+          { pubkey: lptPublicKey, isSigner: false, isWritable: true },
+          { pubkey: srcPublicKey, isSigner: false, isWritable: true },
+          { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
+        ],
+        programId: this.swapProgramId,
+        data: layout.toBuffer()
       });
+      const transaction = new Transaction();
+      transaction.add(instruction);
+      return sendAndConfirmTransaction(
+        this.connection,
+        transaction,
+        [payer],
+        { skipPreflight: true, commitment: 'recent' }).then(txId => {
+          return resolve(txId);
+        }).catch(er => {
+          return reject(er);
+        });
     });
   }
 
@@ -526,8 +523,8 @@ class Swap {
       const lptPublicKey = account.fromAddress(lptAddress);
       const dstPublicKey = account.fromAddress(dstAddress);
       const layout = new soproxABI.struct(
-        [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u64' }],
-        { code: 3, lpt }
+        [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u128' }],
+        { code: 4, lpt }
       );
       const seed = [poolPublicKey.toBuffer()];
       return PublicKey.createProgramAddress(seed, this.swapProgramId).then(treasurerPublicKey => {
@@ -643,20 +640,23 @@ class Swap {
     });
   }
 
-  transfer = (lpt, srcLPTAddress, dstLPTAddress, payer) => {
+  transfer = (lpt, poolAddress, srcLPTAddress, dstLPTAddress, payer) => {
     return new Promise((resolve, reject) => {
+      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
       if (!account.isAddress(srcLPTAddress)) return reject('Invalid source LPT address');
       if (!account.isAddress(dstLPTAddress)) return reject('Invalid destination LPT address');
+      const poolPublicKey = account.fromAddress(poolAddress);
       const srcLPTPublicKey = account.fromAddress(srcLPTAddress);
       const dstLPTPublicKey = account.fromAddress(dstLPTAddress);
 
       const layout = new soproxABI.struct(
-        [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u64' }],
-        { code: 5, lpt }
+        [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u128' }],
+        { code: 6, lpt }
       );
       const instruction = new TransactionInstruction({
         keys: [
           { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+          { pubkey: poolPublicKey, isSigner: false, isWritable: false },
           { pubkey: srcLPTPublicKey, isSigner: false, isWritable: true },
           { pubkey: dstLPTPublicKey, isSigner: false, isWritable: true },
         ],
@@ -686,7 +686,7 @@ class Swap {
 
       const layout = new soproxABI.struct(
         [{ key: 'code', type: 'u8' }],
-        { code: 6 }
+        { code: 13 }
       );
       const instruction = new TransactionInstruction({
         keys: [
@@ -711,6 +711,45 @@ class Swap {
     });
   }
 
+  closePool = (poolAddress, treasuryAddress, dstAddress, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
+      if (!account.isAddress(treasuryAddress)) return reject('Invalid treasury address');
+      if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
+
+      const poolPublicKey = account.fromAddress(poolAddress);
+      const treasuryPublicKey = account.fromAddress(treasuryAddress);
+      const dstPublicKey = account.fromAddress(dstAddress);
+
+      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 14 });
+      const seed = [poolPublicKey.toBuffer()];
+      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(treasurerPublicKey => {
+        const instruction = new TransactionInstruction({
+          keys: [
+            { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+            { pubkey: poolPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasuryPublicKey, isSigner: false, isWritable: true },
+            { pubkey: dstPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
+          ],
+          programId: this.swapProgramId,
+          data: layout.toBuffer()
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
 }
 
 module.exports = Swap;
