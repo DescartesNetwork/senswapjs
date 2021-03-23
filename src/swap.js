@@ -9,7 +9,7 @@ const account = require('./account');
 const schema = require('./schema');
 
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
-const DEFAULT_SWAP_PROGRAM_ADDRESS = '6pgTJ8CgtzsZDnFnBGiwGXRDDpye6BwFS6aXBNdq1eA7';
+const DEFAULT_SWAP_PROGRAM_ADDRESS = 'GC37MwD5QvNUNvcVpzU61uAQdiQiJxLudYe5xZ1gpkiH';
 const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
 
@@ -234,8 +234,8 @@ class Swap {
         return PublicKey.createProgramAddress(seed, this.swapProgramId);
       }).then(treasurerPublicKey => {
         const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 0 });
-        const _mints = mintPublicKeys.map(mintPublicKey => ({ pubkey: mintPublicKey, isSigner: false, isWritable: false }));
-        while (_mints.length < 10) _mints.push({ pubkey: new PublicKey(), isSigner: false, isWritable: false });
+        const mintKeys = mintPublicKeys.map(mintPublicKey => ({ pubkey: mintPublicKey, isSigner: false, isWritable: false }));
+        while (mintKeys.length < 20) mintKeys.push({ pubkey: new PublicKey(), isSigner: false, isWritable: false });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payer.publicKey, isSigner: true, isWritable: false },
@@ -245,7 +245,7 @@ class Swap {
             { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
             { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
-            ..._mints
+            ...mintKeys
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()

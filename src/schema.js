@@ -42,7 +42,7 @@ schema.NETWORK_SCHEMA = [
   { key: 'owner', type: 'pub' },
   { key: 'primary', type: 'pub' },
   { key: 'vault', type: 'pub' },
-  { key: 'mints', type: '[pub;11]' },
+  { key: 'mints', type: '[pub;21]' },
   { key: 'state', type: 'u8' }
 ];
 
