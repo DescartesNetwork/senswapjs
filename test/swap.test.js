@@ -15,7 +15,6 @@ let MINT_ADDRESS_2 = '';
 let ACCOUNT_ADDRESS_2 = '';
 // Network
 let NETWORK_ADDRESS = '';
-let DAO_ADDRESS = '';
 let VAULT_ADDRESS = '';
 // Pool 0
 let POOL_ADDRESS_0 = '';
@@ -90,19 +89,14 @@ describe('Swap library', function () {
     const payer = fromSecretKey(PAYER);
     const network = createAccount();
     const primaryAddress = MINT_ADDRESS_0;
-    const dao = createAccount();
-    const signerAddresses = []; // Default signer[0] is paer
     const mintAddresses = [MINT_ADDRESS_1, MINT_ADDRESS_2]; // Default mint[0] is primary
     NETWORK_ADDRESS = network.publicKey.toBase58();
-    DAO_ADDRESS = dao.publicKey.toBase58();
     createStrictAccount(swap.swapProgramId).then(vault => {
       VAULT_ADDRESS = vault.publicKey.toBase58();
       return swap.initializeNetwork(
         network,
         primaryAddress,
         vault,
-        dao,
-        signerAddresses,
         mintAddresses,
         payer
       );
@@ -211,7 +205,6 @@ describe('Swap library', function () {
       console.log('\n');
       // Network
       console.log('NETWORK_ADDRESS:', NETWORK_ADDRESS);
-      console.log('DAO_ADDRESS:', DAO_ADDRESS);
       console.log('VAULT_ADDRESS:', VAULT_ADDRESS);
       console.log('\n');
       // Pool 0
@@ -258,26 +251,6 @@ describe('Swap library', function () {
       } catch (er) {
         return done();
       }
-    });
-  });
-
-  describe('Test Network', function () {
-    it('Should be a valid network data', function (done) {
-      const swap = new Swap();
-      swap.getNetworkData(NETWORK_ADDRESS).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
-    });
-
-    it('Should be a valid DAO data', function (done) {
-      const swap = new Swap();
-      swap.getDAOData(DAO_ADDRESS).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
     });
   });
 
@@ -487,25 +460,21 @@ describe('Swap library', function () {
     });
   });
 
-  describe('Test DAO', function () {
+  describe('Test Network', function () {
+    it('Should be a valid network data', function (done) {
+      const swap = new Swap();
+      swap.getNetworkData(NETWORK_ADDRESS).then(data => {
+        return done();
+      }).catch(er => {
+        return done(er);
+      });
+    });
+
     it('Should freeze/thaw pool', function (done) {
       const swap = new Swap();
       const payer = fromSecretKey(PAYER);
-      const signers = [payer];
-      swap.freezePool(
-        DAO_ADDRESS,
-        NETWORK_ADDRESS,
-        POOL_ADDRESS_2,
-        signers,
-        payer
-      ).then(txId => {
-        return swap.thawPool(
-          DAO_ADDRESS,
-          NETWORK_ADDRESS,
-          POOL_ADDRESS_2,
-          signers,
-          payer
-        )
+      swap.freezePool(NETWORK_ADDRESS, POOL_ADDRESS_2, payer).then(txId => {
+        return swap.thawPool(NETWORK_ADDRESS, POOL_ADDRESS_2, payer);
       }).then(txId => {
         return swap.getPoolData(POOL_ADDRESS_2);
       }).then(data => {
@@ -515,47 +484,8 @@ describe('Swap library', function () {
       });
     });
 
-    it('Should add/replace/remove signer', function (done) {
-      const swap = new Swap();
-      const payer = fromSecretKey(PAYER);
-      const signers = [payer];
-      const oldSigner = createAccount();
-      const newSigner = createAccount();
-      const oldSignerAddress = oldSigner.publicKey.toBase58();
-      const newSignerAddress = newSigner.publicKey.toBase58();
-      swap.addSigner(
-        DAO_ADDRESS,
-        NETWORK_ADDRESS,
-        oldSignerAddress,
-        signers,
-        payer
-      ).then(txId => {
-        signers.push(oldSigner);
-        return swap.replaceSigner(
-          DAO_ADDRESS,
-          NETWORK_ADDRESS,
-          oldSignerAddress,
-          newSignerAddress,
-          signers,
-          payer
-        );
-      }).then(txId => {
-        signers.pop(oldSigner);
-        signers.push(newSigner);
-        return swap.removeSigner(
-          DAO_ADDRESS,
-          NETWORK_ADDRESS,
-          newSignerAddress,
-          signers,
-          payer
-        );
-      }).then(txId => {
-        return swap.getDAOData(DAO_ADDRESS);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+    it('Should earn', function (done) {
+      return done();
     });
   });
 

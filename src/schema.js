@@ -39,7 +39,7 @@ schema.NETWORK_STATE = {
   }
 }
 schema.NETWORK_SCHEMA = [
-  { key: 'dao', type: 'pub' },
+  { key: 'owner', type: 'pub' },
   { key: 'primary', type: 'pub' },
   { key: 'vault', type: 'pub' },
   { key: 'mints', type: '[pub;11]' },

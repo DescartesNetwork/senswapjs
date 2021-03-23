@@ -9,7 +9,7 @@ const account = require('./account');
 const schema = require('./schema');
 
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
-const DEFAULT_SWAP_PROGRAM_ADDRESS = 'Dm5Eq3fk8bCHtQazY6edRH2LbqFq2RKZbnxiTBSTZTT4';
+const DEFAULT_SWAP_PROGRAM_ADDRESS = '6pgTJ8CgtzsZDnFnBGiwGXRDDpye6BwFS6aXBNdq1eA7';
 const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
 
@@ -101,27 +101,6 @@ class Swap {
     });
   }
 
-  getDAOData = (daoAddress) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(daoAddress)) return reject('Invalid DAO address');
-      const daoPublicKey = account.fromAddress(daoAddress);
-
-      let result = { address: daoAddress }
-      return this.connection.getAccountInfo(daoPublicKey).then(re => {
-        if (!re) return reject('Uninitialized DAO');
-        const { data: daoData } = re;
-        if (!daoData) return reject(`Cannot read data of ${result.address}`);
-        const daoLayout = new soproxABI.struct(schema.DAO_SCHEMA);
-        if (daoData.length !== daoLayout.space) return reject('Unmatched buffer length');
-        daoLayout.fromBuffer(daoData);
-        result = { ...result, ...daoLayout.value };
-        return resolve(result);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
-  }
-
   getNetworkData = (networkAddress) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(networkAddress)) return reject('Invalid network address');
@@ -135,13 +114,9 @@ class Swap {
         const networkLayout = new soproxABI.struct(schema.NETWORK_SCHEMA);
         if (networkData.length !== networkLayout.space) return reject('Unmatched buffer length');
         networkLayout.fromBuffer(networkData);
-        let dao = { address: networkLayout.value.dao };
         let primary = { address: networkLayout.value.primary };
         let vault = { address: networkLayout.value.vault };
-        result = { ...result, ...networkLayout.value, dao, primary, vault };
-        return this.getDAOData(result.dao.address);
-      }).then(daoData => {
-        result.dao = { ...result.dao, ...daoData };
+        result = { ...result, ...networkLayout.value, primary, vault };
         return this._getMintData(result.primary.address);
       }).then(primaryData => {
         result.primary = { ...result.primary, ...primaryData };
@@ -209,23 +184,18 @@ class Swap {
     });
   }
 
-  initializeNetwork = (network, primaryAddress, vault, dao, signerAddresses, mintAddresses, payer) => {
+  initializeNetwork = (network, primaryAddress, vault, mintAddresses, payer) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(primaryAddress)) return reject('Invalid primary address');
-      for (let signerAddress of signerAddresses) {
-        if (!account.isAddress(signerAddress)) return reject('Invalid signer address');
-      }
       for (let mintAddress of mintAddresses) {
         if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
       }
 
       const primaryPublicKey = account.fromAddress(primaryAddress);
-      const signerPublicKeys = signerAddresses.map(signerAddress => account.fromAddress(signerAddress));
       const mintPublicKeys = mintAddresses.map(mintAddress => account.fromAddress(mintAddress));
 
       const networkSpace = (new soproxABI.struct(schema.NETWORK_SCHEMA)).space;
       const vaultSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
-      const daoSpace = (new soproxABI.struct(schema.DAO_SCHEMA)).space;
 
       return this.connection.getMinimumBalanceForRentExemption(networkSpace).then(lamports => {
         const instruction = SystemProgram.createAccount({
@@ -260,29 +230,10 @@ class Swap {
           [payer, vault],
           { skipPreflight: true, commitment: 'recent' });
       }).then(re => {
-        return this.connection.getMinimumBalanceForRentExemption(daoSpace);
-      }).then(lamports => {
-        const instruction = SystemProgram.createAccount({
-          fromPubkey: payer.publicKey,
-          newAccountPubkey: dao.publicKey,
-          lamports,
-          space: daoSpace,
-          programId: this.swapProgramId,
-        });
-        const transaction = new Transaction();
-        transaction.add(instruction);
-        return sendAndConfirmTransaction(
-          this.connection,
-          transaction,
-          [payer, dao],
-          { skipPreflight: true, commitment: 'recent' });
-      }).then(re => {
         const seed = [vault.publicKey.toBuffer()];
         return PublicKey.createProgramAddress(seed, this.swapProgramId);
       }).then(treasurerPublicKey => {
         const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 0 });
-        let _signers = signerPublicKeys.map(signerPublicKey => ({ pubkey: signerPublicKey, isSigner: false, isWritable: false }));
-        while (_signers.length < 10) _signers.push({ pubkey: new PublicKey(), isSigner: false, isWritable: false });
         const _mints = mintPublicKeys.map(mintPublicKey => ({ pubkey: mintPublicKey, isSigner: false, isWritable: false }));
         while (_mints.length < 10) _mints.push({ pubkey: new PublicKey(), isSigner: false, isWritable: false });
         const instruction = new TransactionInstruction({
@@ -292,10 +243,8 @@ class Swap {
             { pubkey: primaryPublicKey, isSigner: false, isWritable: false },
             { pubkey: vault.publicKey, isSigner: true, isWritable: true },
             { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
-            { pubkey: dao.publicKey, isSigner: true, isWritable: true },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
             { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
-            ..._signers,
             ..._mints
           ],
           programId: this.swapProgramId,
@@ -306,7 +255,7 @@ class Swap {
         return sendAndConfirmTransaction(
           this.connection,
           transaction,
-          [payer, network, vault, dao],
+          [payer, network, vault],
           { skipPreflight: true, commitment: 'recent' });
       }).then(txId => {
         return resolve(txId);
@@ -677,24 +626,20 @@ class Swap {
     });
   }
 
-  freezePool = (daoAddress, networkAddress, poolAddress, signers, payer) => {
+  freezePool = (networkAddress, poolAddress, payer) => {
     return new Promise((resolve, reject) => {
-      if (!account.isAddress(daoAddress)) return reject('Invalid dao address');
       if (!account.isAddress(networkAddress)) return reject('Invalid network address');
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
 
-      const daoPublicKey = account.fromAddress(daoAddress);
       const networkPublicKey = account.fromAddress(networkAddress);
       const poolPublicKey = account.fromAddress(poolAddress);
 
       const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 7 });
-      let _signers = signers.map(signer => ({ pubkey: signer.publicKey, isSigner: true, isWritable: false }));
       const instruction = new TransactionInstruction({
         keys: [
-          { pubkey: daoPublicKey, isSigner: false, isWritable: false },
+          { pubkey: payer.publicKey, isSigner: true, isWritable: false },
           { pubkey: networkPublicKey, isSigner: false, isWritable: false },
           { pubkey: poolPublicKey, isSigner: false, isWritable: true },
-          ..._signers,
         ],
         programId: this.swapProgramId,
         data: layout.toBuffer()
@@ -704,7 +649,7 @@ class Swap {
       return sendAndConfirmTransaction(
         this.connection,
         transaction,
-        [payer, ...signers],
+        [payer],
         { skipPreflight: true, commitment: 'recent' }).then(txId => {
           return resolve(txId);
         }).catch(er => {
@@ -713,24 +658,20 @@ class Swap {
     });
   }
 
-  thawPool = (daoAddress, networkAddress, poolAddress, signers, payer) => {
+  thawPool = (networkAddress, poolAddress, payer) => {
     return new Promise((resolve, reject) => {
-      if (!account.isAddress(daoAddress)) return reject('Invalid dao address');
       if (!account.isAddress(networkAddress)) return reject('Invalid network address');
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
 
-      const daoPublicKey = account.fromAddress(daoAddress);
       const networkPublicKey = account.fromAddress(networkAddress);
       const poolPublicKey = account.fromAddress(poolAddress);
 
       const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 8 });
-      let _signers = signers.map(signer => ({ pubkey: signer.publicKey, isSigner: true, isWritable: false }));
       const instruction = new TransactionInstruction({
         keys: [
-          { pubkey: daoPublicKey, isSigner: false, isWritable: false },
+          { pubkey: payer.publicKey, isSigner: true, isWritable: false },
           { pubkey: networkPublicKey, isSigner: false, isWritable: false },
           { pubkey: poolPublicKey, isSigner: false, isWritable: true },
-          ..._signers,
         ],
         programId: this.swapProgramId,
         data: layout.toBuffer()
@@ -740,7 +681,7 @@ class Swap {
       return sendAndConfirmTransaction(
         this.connection,
         transaction,
-        [payer, ...signers],
+        [payer],
         { skipPreflight: true, commitment: 'recent' }).then(txId => {
           return resolve(txId);
         }).catch(er => {
@@ -749,116 +690,7 @@ class Swap {
     });
   }
 
-  addSigner = (daoAddress, networkAddress, newSignerAddress, signers, payer) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(daoAddress)) return reject('Invalid dao address');
-      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
-      if (!account.isAddress(newSignerAddress)) return reject('Invalid signer address');
-
-      const daoPublicKey = account.fromAddress(daoAddress);
-      const networkPublicKey = account.fromAddress(networkAddress);
-      const newSignerPublicKey = account.fromAddress(newSignerAddress);
-
-      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 9 });
-      let _signers = signers.map(signer => ({ pubkey: signer.publicKey, isSigner: true, isWritable: false }));
-      const instruction = new TransactionInstruction({
-        keys: [
-          { pubkey: daoPublicKey, isSigner: false, isWritable: true },
-          { pubkey: networkPublicKey, isSigner: false, isWritable: false },
-          { pubkey: newSignerPublicKey, isSigner: false, isWritable: false },
-          ..._signers,
-        ],
-        programId: this.swapProgramId,
-        data: layout.toBuffer()
-      });
-      const transaction = new Transaction();
-      transaction.add(instruction);
-      return sendAndConfirmTransaction(
-        this.connection,
-        transaction,
-        [payer, ...signers],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
-    });
-  }
-
-  replaceSigner = (daoAddress, networkAddress, oldSignerAddress, newSignerAddress, signers, payer) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(daoAddress)) return reject('Invalid dao address');
-      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
-      if (!account.isAddress(oldSignerAddress)) return reject('Invalid old signer address');
-      if (!account.isAddress(newSignerAddress)) return reject('Invalid new signer address');
-
-      const daoPublicKey = account.fromAddress(daoAddress);
-      const networkPublicKey = account.fromAddress(networkAddress);
-      const oldSignerPublicKey = account.fromAddress(oldSignerAddress);
-      const newSignerPublicKey = account.fromAddress(newSignerAddress);
-
-      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 10 });
-      let _signers = signers.map(signer => ({ pubkey: signer.publicKey, isSigner: true, isWritable: false }));
-      const instruction = new TransactionInstruction({
-        keys: [
-          { pubkey: daoPublicKey, isSigner: false, isWritable: true },
-          { pubkey: networkPublicKey, isSigner: false, isWritable: false },
-          { pubkey: oldSignerPublicKey, isSigner: false, isWritable: false },
-          { pubkey: newSignerPublicKey, isSigner: false, isWritable: false },
-          ..._signers,
-        ],
-        programId: this.swapProgramId,
-        data: layout.toBuffer()
-      });
-      const transaction = new Transaction();
-      transaction.add(instruction);
-      return sendAndConfirmTransaction(
-        this.connection,
-        transaction,
-        [payer, ...signers],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
-    });
-  }
-
-  removeSigner = (daoAddress, networkAddress, oldSignerAddress, signers, payer) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(daoAddress)) return reject('Invalid dao address');
-      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
-      if (!account.isAddress(oldSignerAddress)) return reject('Invalid signer address');
-
-      const daoPublicKey = account.fromAddress(daoAddress);
-      const networkPublicKey = account.fromAddress(networkAddress);
-      const oldSignerPublicKey = account.fromAddress(oldSignerAddress);
-
-      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 11 });
-      let _signers = signers.map(signer => ({ pubkey: signer.publicKey, isSigner: true, isWritable: false }));
-      const instruction = new TransactionInstruction({
-        keys: [
-          { pubkey: daoPublicKey, isSigner: false, isWritable: true },
-          { pubkey: networkPublicKey, isSigner: false, isWritable: false },
-          { pubkey: oldSignerPublicKey, isSigner: false, isWritable: false },
-          ..._signers,
-        ],
-        programId: this.swapProgramId,
-        data: layout.toBuffer()
-      });
-      const transaction = new Transaction();
-      transaction.add(instruction);
-      return sendAndConfirmTransaction(
-        this.connection,
-        transaction,
-        [payer, ...signers],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
-    });
-  }
+  earn = () => { }
 
   closeLPT = (lptAddress, dstAddress, payer) => {
     return new Promise((resolve, reject) => {
@@ -867,10 +699,7 @@ class Swap {
       const lptPublicKey = account.fromAddress(lptAddress);
       const dstPublicKey = account.fromAddress(dstAddress);
 
-      const layout = new soproxABI.struct(
-        [{ key: 'code', type: 'u8' }],
-        { code: 13 }
-      );
+      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 10 });
       const instruction = new TransactionInstruction({
         keys: [
           { pubkey: payer.publicKey, isSigner: true, isWritable: false },
@@ -904,7 +733,7 @@ class Swap {
       const treasuryPublicKey = account.fromAddress(treasuryAddress);
       const dstPublicKey = account.fromAddress(dstAddress);
 
-      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 14 });
+      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 11 });
       const seed = [poolPublicKey.toBuffer()];
       return PublicKey.createProgramAddress(seed, this.swapProgramId).then(treasurerPublicKey => {
         const instruction = new TransactionInstruction({
