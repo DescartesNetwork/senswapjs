@@ -143,9 +143,13 @@ class Swap {
         const poolLayout = new soproxABI.struct(schema.POOL_SCHEMA);
         if (poolData.length !== poolLayout.space) return reject('Unmatched buffer length');
         poolLayout.fromBuffer(poolData);
+        let network = { address: poolLayout.value.network };
         let mint = { address: poolLayout.value.mint };
         let treasury = { address: poolLayout.value.treasury };
-        result = { ...result, ...poolLayout.value, mint, treasury };
+        result = { ...result, ...poolLayout.value, network, mint, treasury };
+        return this.getNetworkData(result.network.address)
+      }).then(networkData => {
+        result.network = { ...result.network, ...networkData };
         return this._getMintData(result.mint.address);
       }).then(mintData => {
         result.mint = { ...result.mint, ...mintData };
