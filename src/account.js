@@ -7,6 +7,7 @@ const ssKeystore = require('./keystore');
 const account = {}
 
 account.isAddress = (address) => {
+  if (!address) return false;
   try {
     const publicKey = new PublicKey(address);
     if (!publicKey) throw new Error('Invalid public key');
