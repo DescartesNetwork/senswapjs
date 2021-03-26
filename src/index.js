@@ -9,6 +9,7 @@ const SRC20 = require('./src20');
 const { SPLT, AuthorityType } = require('./splt');
 const Lamports = require('./lamports');
 const oracle = require('./oracle');
+const crypto = require('./crypto');
 
 module.exports = {
   account, ...account,
@@ -23,4 +24,5 @@ module.exports = {
   AuthorityType,
   Lamports,
   oracle, ...oracle,
+  crypto,
 }
