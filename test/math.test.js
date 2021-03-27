@@ -21,7 +21,7 @@ describe('Math library', function () {
 
   it('Should undecimalize', function (done) {
     const a = undecimalize(5000123456789n, 9);
-    if (a !== 5000.123456789) return done('Wrong result');
+    if (a !== '5000.123456789') return done('Wrong result');
     return done();
   });
 });

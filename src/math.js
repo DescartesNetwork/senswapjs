@@ -19,9 +19,9 @@ math.undecimalize = (a, decimals) => {
   if (!a) return 0;
   if (decimals <= 0 || decimals % 1 != 0) return 0;
   const n = a.toString();
-  if (n.length > decimals) return parseFloat(n.substring(0, n.length - decimals) + '.' + n.substring(n.length - decimals, n.length));
-  if (n.length == decimals) return parseFloat('0.' + n);
-  else return parseFloat('0.' + '0'.repeat(decimals - n.length) + n);
+  if (n.length > decimals) return n.substring(0, n.length - decimals) + '.' + n.substring(n.length - decimals, n.length);
+  if (n.length == decimals) return '0.' + n;
+  else return '0.' + '0'.repeat(decimals - n.length) + n;
 }
 
 math.div = (a, b) => {
