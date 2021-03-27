@@ -22,7 +22,7 @@ math.undecimalize = (a, decimals) => {
   if (n.length > decimals) {
     let fraction = n.substring(n.length - decimals, n.length).split('');
     while (fraction[fraction.length - 1] === '0') fraction.pop();
-    fraction = fraction.join();
+    fraction = fraction.join('');
     if (!fraction) return n.substring(0, n.length - decimals);
     return n.substring(0, n.length - decimals) + '.' + fraction;
   }
