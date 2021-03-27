@@ -19,15 +19,18 @@ math.undecimalize = (a, decimals) => {
   if (!a) return 0;
   if (decimals <= 0 || decimals % 1 != 0) return 0;
   const n = a.toString();
-  if (n.length > decimals) {
-    let fraction = n.substring(n.length - decimals, n.length).split('');
-    while (fraction[fraction.length - 1] === '0') fraction.pop();
-    fraction = fraction.join('');
-    if (!fraction) return n.substring(0, n.length - decimals);
-    return n.substring(0, n.length - decimals) + '.' + fraction;
-  }
-  else if (n.length == decimals) return '0.' + n;
-  else return '0.' + '0'.repeat(decimals - n.length) + n;
+
+  let integer = n.length > decimals ? n.substring(0, n.length - decimals) : '0';
+  let fraction = '';
+  if (n.length > decimals) fraction = n.substring(n.length - decimals, n.length);
+  else if (n.length == decimals) fraction = n;
+  else fraction = '0'.repeat(decimals - n.length) + n;
+
+  fraction = fraction.split('');
+  while (fraction[fraction.length - 1] === '0') fraction.pop();
+  fraction = fraction.join('');
+  if (!fraction) return integer;
+  return integer + '.' + fraction;
 }
 
 math.div = (a, b) => {

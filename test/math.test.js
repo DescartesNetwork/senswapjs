@@ -21,8 +21,13 @@ describe('Math library', function () {
 
   it('Should undecimalize', function (done) {
     const a = undecimalize(5000123456789n, 9);
-    console.log(a)
     if (a !== '5000.123456789') return done('Wrong result');
+    return done();
+  });
+
+  it('Should undecimalize', function (done) {
+    const a = undecimalize(18650, 9);
+    if (a !== '0.00001865') return done('Wrong result');
     return done();
   });
 });
