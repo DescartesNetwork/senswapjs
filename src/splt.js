@@ -50,7 +50,7 @@ class SPLT {
       if (er) return callback(er, null);
       const { type, accountId } = re;
       let getData = () => { }
-      if (type === 'accpunt') getData = this.getAccountData;
+      if (type === 'account') getData = this.getAccountData;
       if (type === 'mint') getData = this.getMintData;
       if (type === 'multisig') getData = this.getMultiSigData;
       return getData(accountId).then(data => {
@@ -165,8 +165,8 @@ class SPLT {
             { key: 'code', type: 'u8' },
             { key: 'decimals', type: 'u8' },
             { key: 'mint_authority', type: 'pub' },
-            { key: "freeze_authority_option", type: "u8" },
-            { key: "freeze_authority", type: "pub" },
+            { key: 'freeze_authority_option', type: 'u8' },
+            { key: 'freeze_authority', type: 'pub' },
           ],
           {
             code: 0,
@@ -207,7 +207,7 @@ class SPLT {
       }).catch(er => {
         return reject(er);
       });
-    })
+    });
   }
 
   _initializeArbitraryAccount = (newAccount, mintAddress, payer) => {
@@ -232,9 +232,7 @@ class SPLT {
           [payer, newAccount],
           { skipPreflight: true, commitment: 'recent' });
       }).then(re => {
-        const layout = new soproxABI.struct(
-          [{ key: 'code', type: 'u8' }],
-          { code: 1 });
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 1 });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: newAccount.publicKey, isSigner: false, isWritable: true },
@@ -380,11 +378,12 @@ class SPLT {
         this.connection,
         transaction,
         [payer],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
   }
 
@@ -413,11 +412,12 @@ class SPLT {
         this.connection,
         transaction,
         [payer],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
   }
 
@@ -426,9 +426,7 @@ class SPLT {
       if (!account.isAddress(srcAddress)) return reject('Invalid source address');
       const srcPublicKey = account.fromAddress(srcAddress);
 
-      const layout = new soproxABI.struct(
-        [{ key: 'code', type: 'u8' }],
-        { code: 5 });
+      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 5 });
       const instruction = new TransactionInstruction({
         keys: [
           { pubkey: srcPublicKey, isSigner: false, isWritable: true },
@@ -443,11 +441,12 @@ class SPLT {
         this.connection,
         transaction,
         [payer],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
   }
 
@@ -485,12 +484,13 @@ class SPLT {
         this.connection,
         transaction,
         [payer],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
-    })
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
   }
 
   mintTo = (amount, mintAddress, dstAddress, payer) => {
@@ -518,11 +518,12 @@ class SPLT {
         this.connection,
         transaction,
         [payer],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
   }
 
@@ -551,11 +552,12 @@ class SPLT {
         this.connection,
         transaction,
         [payer],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
   }
 
@@ -564,9 +566,7 @@ class SPLT {
       if (!account.isAddress(targetAccount)) return reject('Invalid target address');
       const targetPublicKey = account.fromAddress(targetAccount);
 
-      const layout = new soproxABI.struct(
-        [{ key: 'code', type: 'u8' }],
-        { code: 9 });
+      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 9 });
       const instruction = new TransactionInstruction({
         keys: [
           { pubkey: targetPublicKey, isSigner: false, isWritable: true },
@@ -582,11 +582,12 @@ class SPLT {
         this.connection,
         transaction,
         [payer],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
   }
 
@@ -597,9 +598,7 @@ class SPLT {
       const targetPublicKey = account.fromAddress(targetAddress);
       const mintPublicKey = account.fromAddress(mintAddress);
 
-      const layout = new soproxABI.struct(
-        [{ key: 'code', type: 'u8' }],
-        { code: 10 });
+      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 10 });
       const instruction = new TransactionInstruction({
         keys: [
           { pubkey: targetPublicKey, isSigner: false, isWritable: true },
@@ -615,11 +614,12 @@ class SPLT {
         this.connection,
         transaction,
         [payer],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
   }
 
@@ -630,9 +630,7 @@ class SPLT {
       const targetPublicKey = account.fromAddress(targetAddress);
       const mintPublicKey = account.fromAddress(mintAddress);
 
-      const layout = new soproxABI.struct(
-        [{ key: 'code', type: 'u8' }],
-        { code: 11 });
+      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 11 });
       const instruction = new TransactionInstruction({
         keys: [
           { pubkey: targetPublicKey, isSigner: false, isWritable: true },
@@ -648,13 +646,13 @@ class SPLT {
         this.connection,
         transaction,
         [payer],
-        { skipPreflight: true, commitment: 'recent' }).then(txId => {
-          return resolve(txId);
-        }).catch(er => {
-          return reject(er);
-        });
+        { skipPreflight: true, commitment: 'recent' }
+      ).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
     });
-
   }
 }
 
