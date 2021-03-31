@@ -487,6 +487,20 @@ describe('Swap library', function () {
     it('Should earn', function (done) {
       return done();
     });
+
+    it('Should transfer ownership', function (done) {
+      const swap = new Swap();
+      const payer = fromSecretKey(PAYER);
+      const newOwner = createAccount();
+      swap.transferOwnership(newOwner, NETWORK_ADDRESS, payer).then(txId => {
+        return swap.getNetworkData(NETWORK_ADDRESS);
+      }).then(data => {
+        if (data.owner == newOwner.publicKey.toBase58()) return done();
+        return done('Cannot transfer ownership');
+      }).catch(er => {
+        return done(er);
+      });
+    });
   });
 
 });

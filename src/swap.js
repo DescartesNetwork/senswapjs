@@ -9,7 +9,7 @@ const account = require('./account');
 const schema = require('./schema');
 
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
-const DEFAULT_SWAP_PROGRAM_ADDRESS = 'BVK3vduDFLbPouYBPBd8gpKjHSaj88mN2aTMbjQaXPda';
+const DEFAULT_SWAP_PROGRAM_ADDRESS = 'DV9TWNbaN8nabswzdDT1PYqqcP8eKvBtGGXShKj5E5ya';
 const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
 
@@ -764,6 +764,36 @@ class Swap {
       }).catch(er => {
         return reject(er);
       });
+    });
+  }
+
+  transferOwnership = (newOwner, networkAddress, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
+
+      const networkPublicKey = account.fromAddress(networkAddress);
+
+      const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 12 });
+      const instruction = new TransactionInstruction({
+        keys: [
+          { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+          { pubkey: newOwner.publicKey, isSigner: true, isWritable: false },
+          { pubkey: networkPublicKey, isSigner: false, isWritable: true },
+        ],
+        programId: this.swapProgramId,
+        data: layout.toBuffer()
+      });
+      const transaction = new Transaction();
+      transaction.add(instruction);
+      return sendAndConfirmTransaction(
+        this.connection,
+        transaction,
+        [payer, newOwner],
+        { skipPreflight: true, commitment: 'recent' }).then(txId => {
+          return resolve(txId);
+        }).catch(er => {
+          return reject(er);
+        });
     });
   }
 }
