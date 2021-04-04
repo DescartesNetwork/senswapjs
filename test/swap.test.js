@@ -485,7 +485,14 @@ describe('Swap library', function () {
     });
 
     it('Should earn', function (done) {
-      return done();
+      const swap = new Swap();
+      const payer = fromSecretKey(PAYER);
+      const amount = 1000n;
+      swap.earn(amount, NETWORK_ADDRESS, VAULT_ADDRESS, ACCOUNT_ADDRESS_0, payer).then(txId => {
+        return done();
+      }).catch(er => {
+        return done(er);
+      });
     });
 
     it('Should transfer ownership', function (done) {

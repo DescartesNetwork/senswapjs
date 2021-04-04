@@ -694,7 +694,47 @@ class Swap {
     });
   }
 
-  earn = () => { }
+  earn = (amount, networkAddress, vaultAddress, dstAddress, payer) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
+      if (!account.isAddress(vaultAddress)) return reject('Invalid vault address');
+      if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
+
+      const networkPublicKey = account.fromAddress(networkAddress);
+      const vaultPublicKey = account.fromAddress(vaultAddress);
+      const dstPublicKey = account.fromAddress(dstAddress);
+
+      const seed = [vaultPublicKey.toBuffer()];
+      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(treasurerPublicKey => {
+        const layout = new soproxABI.struct(
+          [{ key: 'code', type: 'u8' }, { key: 'amount', type: 'u64' }],
+          { code: 9, amount });
+        const instruction = new TransactionInstruction({
+          keys: [
+            { pubkey: payer.publicKey, isSigner: true, isWritable: false },
+            { pubkey: networkPublicKey, isSigner: false, isWritable: false },
+            { pubkey: vaultPublicKey, isSigner: false, isWritable: true },
+            { pubkey: dstPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
+          ],
+          programId: this.swapProgramId,
+          data: layout.toBuffer()
+        });
+        const transaction = new Transaction();
+        transaction.add(instruction);
+        return sendAndConfirmTransaction(
+          this.connection,
+          transaction,
+          [payer],
+          { skipPreflight: true, commitment: 'recent' });
+      }).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
 
   closeLPT = (lptAddress, dstAddress, payer) => {
     return new Promise((resolve, reject) => {
