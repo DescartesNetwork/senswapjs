@@ -1,6 +1,6 @@
 {
   "name": "senswapjs",
-  "version": "0.0.70",
+  "version": "1.0.0",
   "description": "An auxiliary JS library for Senswap",
   "main": "dist/index.js",
   "scripts": {
@@ -30,7 +30,7 @@
     "mocha": "^8.2.1"
   },
   "dependencies": {
-    "@solana/web3.js": "^0.90.5",
+    "@solana/web3.js": "^1.2.6",
     "aes-js": "^3.1.2",
     "async": "^3.2.0",
     "axios": "^0.21.1",

@@ -3,15 +3,13 @@ const {
   sendAndConfirmTransaction,
 } = require('@solana/web3.js');
 
+const Tx = require('./core/tx');
 const account = require('./account');
 
-const DEFAULT_NODEURL = 'https://devnet.solana.com';
 
-
-class Lamports {
-  constructor(nodeUrl = DEFAULT_NODEURL) {
-    this.nodeUrl = nodeUrl;
-    this.connection = this._createConnection();
+class Lamports extends Tx {
+  constructor(nodeUrl) {
+    super(nodeUrl);
   }
 
   _createConnection = () => {
@@ -41,24 +39,31 @@ class Lamports {
     });
   }
 
-  transfer = (lamports, dstAddress, payer) => {
+  transfer = (lamports, dstAddress, wallet) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
+
+      let transaction = new Transaction();
       const dstPublicKey = account.fromAddress(dstAddress);
 
-      const instruction = SystemProgram.transfer({
-        fromPubkey: payer.publicKey,
-        toPubkey: dstPublicKey,
-        lamports
-      });
-      const transaction = new Transaction();
-      transaction.add(instruction);
-      return sendAndConfirmTransaction(
-        this.connection,
-        transaction,
-        [payer],
-        { skipPreflight: true, commitment: 'recent' }
-      ).then(txId => {
+      return this._addRecentCommitment(transaction).then(txWithCommitment => {
+        transaction = txWithCommitment;
+        return wallet.getAccount();
+      }).then(payerAddress => {
+        const payerPublicKey = account.fromAddress(payerAddress);
+
+        const instruction = SystemProgram.transfer({
+          fromPubkey: payerPublicKey,
+          toPubkey: dstPublicKey,
+          lamports
+        });
+        transaction.add(instruction);
+        transaction.feePayer = payerPublicKey;
+        return wallet.sign(transaction);
+      }).then(payerSig => {
+        this._addSignature(transaction, payerSig);
+        return this._sendTransaction(transaction);
+      }).then(txId => {
         return resolve(txId);
       }).catch(er => {
         return reject(er);
