@@ -1,9 +1,7 @@
-const {
-  fromSecretKey, createAccount, createStrictAccount,
-  Swap, SPLT
-} = require('../dist');
+const { createAccount, createStrictAccount, Swap, SPLT } = require('../dist');
+const Wallet = require('./wallet.mock');
 
-const PAYER = 'e06a1a17cf400f6c322e32377a9a7653eecf58f3eb0061023b743c689b43a5fa491573553e4afdcdcd1c94692a138dd2fd0dc0f6946ef798ba34ac1ad00b3720';
+const payer = new Wallet('e06a1a17cf400f6c322e32377a9a7653eecf58f3eb0061023b743c689b43a5fa491573553e4afdcdcd1c94692a138dd2fd0dc0f6946ef798ba34ac1ad00b3720');
 // Primary Mint
 let MINT_ADDRESS_0 = '';
 let ACCOUNT_ADDRESS_0 = '';
@@ -35,7 +33,6 @@ describe('Swap library', function () {
     const account = createAccount();
     MINT_ADDRESS_0 = mint.publicKey.toBase58();
     ACCOUNT_ADDRESS_0 = account.publicKey.toBase58();
-    const payer = fromSecretKey(PAYER);
     const splt = new SPLT();
     splt.initializeMint(9, null, mint, payer).then(txId => {
       return splt.initializeAccount(account, MINT_ADDRESS_0, payer);
@@ -53,7 +50,6 @@ describe('Swap library', function () {
     const account = createAccount();
     MINT_ADDRESS_1 = mint.publicKey.toBase58();
     ACCOUNT_ADDRESS_1 = account.publicKey.toBase58();
-    const payer = fromSecretKey(PAYER);
     const splt = new SPLT();
     splt.initializeMint(9, null, mint, payer).then(txId => {
       return splt.initializeAccount(account, MINT_ADDRESS_1, payer);
@@ -71,7 +67,6 @@ describe('Swap library', function () {
     const account = createAccount();
     MINT_ADDRESS_2 = mint.publicKey.toBase58();
     ACCOUNT_ADDRESS_2 = account.publicKey.toBase58();
-    const payer = fromSecretKey(PAYER);
     const splt = new SPLT();
     splt.initializeMint(9, null, mint, payer).then(txId => {
       return splt.initializeAccount(account, MINT_ADDRESS_2, payer);
@@ -86,7 +81,6 @@ describe('Swap library', function () {
 
   it('Network', function (done) {
     const swap = new Swap();
-    const payer = fromSecretKey(PAYER);
     const network = createAccount();
     const primaryAddress = MINT_ADDRESS_0;
     const mintAddresses = [MINT_ADDRESS_1, MINT_ADDRESS_2]; // Default mint[0] is primary
@@ -111,7 +105,6 @@ describe('Swap library', function () {
     const swap = new Swap();
     const treasury = createAccount();
     const lpt = createAccount();
-    const payer = fromSecretKey(PAYER);
     TREASURY_ADDRESS_0 = treasury.publicKey.toBase58();
     LPT_ADDRESS_0 = lpt.publicKey.toBase58();
     createStrictAccount(swap.swapProgramId).then(pool => {
@@ -137,7 +130,6 @@ describe('Swap library', function () {
     const swap = new Swap();
     const treasury = createAccount();
     const lpt = createAccount();
-    const payer = fromSecretKey(PAYER);
     TREASURY_ADDRESS_1 = treasury.publicKey.toBase58();
     LPT_ADDRESS_1 = lpt.publicKey.toBase58();
     createStrictAccount(swap.swapProgramId).then(pool => {
@@ -163,7 +155,6 @@ describe('Swap library', function () {
     const swap = new Swap();
     const treasury = createAccount();
     const lpt = createAccount();
-    const payer = fromSecretKey(PAYER);
     TREASURY_ADDRESS_2 = treasury.publicKey.toBase58();
     LPT_ADDRESS_2 = lpt.publicKey.toBase58();
     createStrictAccount(swap.swapProgramId).then(pool => {
@@ -187,10 +178,6 @@ describe('Swap library', function () {
 
   describe('Test constructor', function () {
     it('Should fill configs', function (done) {
-      // PAYER
-      const payer = fromSecretKey(PAYER);
-      console.log('PAYER:', payer.publicKey.toBase58());
-      console.log('\n');
       // Mint 0
       console.log('MINT_ADDRESS_0:', MINT_ADDRESS_0);
       console.log('ACCOUNT_ADDRESS_0:', ACCOUNT_ADDRESS_0);
@@ -268,7 +255,6 @@ describe('Swap library', function () {
       const swap = new Swap();
       const treasury = createAccount();
       const lpt = createAccount();
-      const payer = fromSecretKey(PAYER);
       createStrictAccount(swap.swapProgramId).then(pool => {
         return swap.initializePool(
           1000000000000n,
@@ -291,7 +277,6 @@ describe('Swap library', function () {
       const swap = new Swap();
       const treasury = createAccount();
       const lpt = createAccount();
-      const payer = fromSecretKey(PAYER);
       createStrictAccount(swap.swapProgramId).then(pool => {
         return swap.initializePool(
           1000000000000n,
@@ -314,7 +299,6 @@ describe('Swap library', function () {
 
     it('Should swap', function (done) {
       const swap = new Swap();
-      const payer = fromSecretKey(PAYER);
       swap.swap(
         10000000000n,
         NETWORK_ADDRESS,
@@ -350,7 +334,6 @@ describe('Swap library', function () {
 
     it('Should add liquidity', function (done) {
       const swap = new Swap();
-      const payer = fromSecretKey(PAYER);
       const lpt = createAccount();
       const lptAddress = lpt.publicKey.toBase58();
       swap.initializeLPT(lpt, POOL_ADDRESS_0, payer).then(txId => {
@@ -375,7 +358,6 @@ describe('Swap library', function () {
 
     it('Should remove liquidity', function (done) {
       const swap = new Swap();
-      const payer = fromSecretKey(PAYER);
       swap.removeLiquidity(
         5000000000n,
         POOL_ADDRESS_0,
@@ -396,8 +378,6 @@ describe('Swap library', function () {
       const swap = new Swap();
       const lpt = createAccount();
       const lptAddress = lpt.publicKey.toBase58();
-      const payer = fromSecretKey(PAYER);
-
       swap.initializeLPT(lpt, POOL_ADDRESS_0, payer).then(txId => {
         return swap.getLPTData(lptAddress);
       }).then(data => {
@@ -420,14 +400,16 @@ describe('Swap library', function () {
       const swap = new Swap();
       const treasury = createAccount();
       const lpt = createAccount();
-      const payer = fromSecretKey(PAYER);
 
       let poolAddress = '';
       const treasuryAddress = treasury.publicKey.toBase58();
       const lptAddress = lpt.publicKey.toBase58();
-      const dstAddress = payer.publicKey.toBase58();
+      let dstAddress = null;
 
-      createStrictAccount(swap.swapProgramId).then(pool => {
+      payer.getAccount().then(re => {
+        dstAddress = re;
+        return createStrictAccount(swap.swapProgramId)
+      }).then(pool => {
         poolAddress = pool.publicKey.toBase58();
         return swap.initializePool(
           1000000000000n,
@@ -438,7 +420,8 @@ describe('Swap library', function () {
           lpt,
           ACCOUNT_ADDRESS_1,
           MINT_ADDRESS_1,
-          payer);
+          payer
+        );
       }).then(txId => {
         return swap.removeLiquidity(
           50000000000n,
@@ -472,7 +455,6 @@ describe('Swap library', function () {
 
     it('Should freeze/thaw pool', function (done) {
       const swap = new Swap();
-      const payer = fromSecretKey(PAYER);
       swap.freezePool(NETWORK_ADDRESS, POOL_ADDRESS_2, payer).then(txId => {
         return swap.thawPool(NETWORK_ADDRESS, POOL_ADDRESS_2, payer);
       }).then(txId => {
@@ -486,7 +468,6 @@ describe('Swap library', function () {
 
     it('Should earn', function (done) {
       const swap = new Swap();
-      const payer = fromSecretKey(PAYER);
       const amount = 1000n;
       swap.earn(amount, NETWORK_ADDRESS, VAULT_ADDRESS, ACCOUNT_ADDRESS_0, payer).then(txId => {
         return done();
@@ -497,7 +478,6 @@ describe('Swap library', function () {
 
     it('Should transfer ownership', function (done) {
       const swap = new Swap();
-      const payer = fromSecretKey(PAYER);
       const newOwner = createAccount();
       swap.transferOwnership(newOwner, NETWORK_ADDRESS, payer).then(txId => {
         return swap.getNetworkData(NETWORK_ADDRESS);

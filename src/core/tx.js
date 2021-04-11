@@ -1,7 +1,6 @@
 const nacl = require('tweetnacl');
 const { Connection, Transaction, SystemProgram } = require('@solana/web3.js');
 const account = require('../account');
-const { reject } = require('async');
 
 const DEFAULT_NODEURL = 'https://devnet.solana.com';
 
@@ -45,15 +44,8 @@ class Tx {
   }
 
   _addSignature = (transaction, { publicKey, signature }) => {
-    if (!transaction.feePayer) {
-      transaction.feePayer = publicKey
-    } else if (transaction.feePayer.equals(publicKey)) {
-      transaction.feePayer = publicKey;
-    } else {
-      transaction.signatures = transaction.signatures.filter(({ publicKey: pub }) => !pub.equals(publicKey));
-      transaction.signatures.push({ publicKey, signature: null });
-    }
-    transaction.addSignature(publicKey, signature);
+    if (!transaction.feePayer) transaction.feePayer = publicKey;
+    transaction._addSignature(publicKey, signature);
   }
 
   _sign = (transaction, account) => {

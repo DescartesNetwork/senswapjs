@@ -139,6 +139,7 @@ class SPLT extends Tx {
 
       let transaction = new Transaction();
       const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
+      
       return this._rentAccount(wallet, mint, mintSpace, this.spltProgramId).then(txId => {
         return this._addRecentCommitment(transaction);
       }).then(txWithCommitment => {

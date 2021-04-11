@@ -124,7 +124,7 @@ describe('SPLT library', function () {
       const splt = new SPLT();
       const authorityType = AuthorityType.FreezeAccount;
       payer.getAccount().then(newFreezeAuthorityAddress => {
-        return splt.setAuthority(authorityType, newFreezeAuthorityAddress, MINT_ADDRESS, payer)
+        return splt.setAuthority(authorityType, newFreezeAuthorityAddress, MINT_ADDRESS, payer);
       }).then(txId => {
         return done('An invalid action is skipped');
       }).catch(er => {
@@ -222,7 +222,7 @@ describe('SPLT library', function () {
       const splt = new SPLT();
       const amount = 10000000000n;
       delegate.getAccount().then(delegateAddress => {
-        return splt.approve(amount, SRC_ADDRESS, delegateAddress, payer)
+        return splt.approve(amount, SRC_ADDRESS, delegateAddress, payer);
       }).then(txId => {
         return splt.getAccountData(SRC_ADDRESS);
       }).then(data => {
@@ -261,7 +261,7 @@ describe('SPLT library', function () {
       const splt = new SPLT();
       const authorityType = AuthorityType.CloseAccount;
       payer.getAccount(newAuthorityAddress => {
-        return splt.setAuthority(authorityType, newAuthorityAddress, SRC_ADDRESS, payer)
+        return splt.setAuthority(authorityType, newAuthorityAddress, SRC_ADDRESS, payer);
       }).then(txId => {
         return splt.getAccountData(SRC_ADDRESS);
       }).then(data => {
@@ -290,7 +290,7 @@ describe('SPLT library', function () {
       const accountAddress = newAccount.publicKey.toBase58();
       const mintAddress = mint.publicKey.toBase58();
       payer.getAccount().then(freezeAuthorityAddress => {
-        return splt.initializeMint(9, freezeAuthorityAddress, mint, payer)
+        return splt.initializeMint(9, freezeAuthorityAddress, mint, payer);
       }).then(txId => {
         return splt.initializeAccount(newAccount, mintAddress, payer);
       }).then(txId => {
@@ -324,7 +324,7 @@ describe('SPLT library', function () {
         return delegate.getAccount();
       }).then(delegateAddress => {
         signerAddresses.push(delegateAddress);
-        return splt.initializeMultiSig(2, signerAddresses, multiSig, payer)
+        return splt.initializeMultiSig(2, signerAddresses, multiSig, payer);
       }).then(txId => {
         return splt.getMultiSigData(multiSig.publicKey.toBase58());
       }).then(data => {
