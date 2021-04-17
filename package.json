@@ -1,10 +1,9 @@
 {
   "name": "senswapjs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An auxiliary JS library for Senswap",
   "main": "dist/index.js",
   "scripts": {
-    "release": "npm run build && npm publish",
     "build": "npm run clean && babel src -d dist",
     "clean": "rm -rf ./dist",
     "local:install": "npm run build && npm i -g",
