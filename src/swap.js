@@ -1,5 +1,5 @@
-const { PublicKey, Transaction,
-  SystemProgram, sendAndConfirmTransaction, SYSVAR_RENT_PUBKEY,
+const {
+  PublicKey, Transaction, SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
 } = require('@solana/web3.js');
 const soproxABI = require('soprox-abi');

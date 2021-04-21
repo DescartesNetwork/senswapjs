@@ -1,6 +1,5 @@
 const {
   Connection, Transaction, SystemProgram,
-  sendAndConfirmTransaction,
 } = require('@solana/web3.js');
 
 const Tx = require('./core/tx');

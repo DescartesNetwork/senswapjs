@@ -1,6 +1,6 @@
-const { Transaction,
-  SystemProgram, sendAndConfirmTransaction,
-  TransactionInstruction, SYSVAR_RENT_PUBKEY
+const {
+  Transaction, SystemProgram, TransactionInstruction,
+  SYSVAR_RENT_PUBKEY
 } = require('@solana/web3.js');
 const soproxABI = require('soprox-abi');
 
@@ -139,7 +139,7 @@ class SPLT extends Tx {
 
       let transaction = new Transaction();
       const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
-      
+
       return this._rentAccount(wallet, mint, mintSpace, this.spltProgramId).then(txId => {
         return this._addRecentCommitment(transaction);
       }).then(txWithCommitment => {
