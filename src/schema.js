@@ -1,50 +1,8 @@
 const schema = {}
 
-
-/**
- * SRC20
- */
-schema.SRC20_ACCOUNT_SCHEMA = [
-  { key: 'owner', type: 'pub' },
-  { key: 'token', type: 'pub' },
-  { key: 'amount', type: 'u64' },
-  { key: 'initialized', type: 'bool' }
-];
-
-schema.TOKEN_SCHEMA = [
-  { key: 'symbol', type: '[char;4]' },
-  { key: 'total_supply', type: 'u64' },
-  { key: 'decimals', type: 'u8' },
-  { key: 'initialized', type: 'bool' }
-];
-
 /**
  * SenSwap
  */
-
-schema.DAO_SCHEMA = [
-  { key: 'signers', type: '[pub;11]' },
-  { key: 'is_initialized', type: 'bool' }
-];
-
-schema.NETWORK_STATE = {
-  get Uninitialized() {
-    return 0;
-  },
-  get Initialized() {
-    return 1;
-  },
-  get Activated() {
-    return 2;
-  }
-}
-schema.NETWORK_SCHEMA = [
-  { key: 'owner', type: 'pub' },
-  { key: 'primary', type: 'pub' },
-  { key: 'vault', type: 'pub' },
-  { key: 'mints', type: '[pub;21]' },
-  { key: 'state', type: 'u8' }
-];
 
 schema.POOL_STATE = {
   get Uninitialized() {
@@ -59,18 +17,27 @@ schema.POOL_STATE = {
 }
 schema.POOL_SCHEMA = [
   { key: 'owner', type: 'pub' },
-  { key: 'network', type: 'pub' },
-  { key: 'mint', type: 'pub' },
-  { key: 'treasury', type: 'pub' },
-  { key: 'reserve', type: 'u64' },
-  { key: 'lpt', type: 'u128' },
-  { key: 'state', type: 'u8' }
+  { key: 'state', type: 'u8' },
+
+  { key: 'mint_s', type: 'pub' },
+  { key: 'treasury_s', type: 'pub' },
+  { key: 'reserve_s', type: 'u64' },
+
+  { key: 'mint_a', type: 'pub' },
+  { key: 'treasury_a', type: 'pub' },
+  { key: 'reserve_a', type: 'u64' },
+
+  { key: 'mint_b', type: 'pub' },
+  { key: 'treasury_b', type: 'pub' },
+  { key: 'reserve_b', type: 'u64' },
+
+  { key: 'vault', type: 'pub' },
 ];
 
 schema.LPT_SCHEMA = [
   { key: 'owner', type: 'pub' },
   { key: 'pool', type: 'pub' },
-  { key: 'lpt', type: 'u128' },
+  { key: 'lpt', type: 'u64' },
   { key: 'is_initialized', type: 'bool' }
 ];
 

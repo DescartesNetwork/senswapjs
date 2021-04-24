@@ -11,21 +11,20 @@ let ACCOUNT_ADDRESS_1 = '';
 // Mint 2
 let MINT_ADDRESS_2 = '';
 let ACCOUNT_ADDRESS_2 = '';
-// Network
-let NETWORK_ADDRESS = '';
-let VAULT_ADDRESS = '';
 // Pool 0
 let POOL_ADDRESS_0 = '';
-let TREASURY_ADDRESS_0 = '';
+let TREASURY_S_ADDRESS_0 = '';
+let TREASURY_A_ADDRESS_0 = '';
+let TREASURY_B_ADDRESS_0 = '';
 let LPT_ADDRESS_0 = '';
+let VAULT_ADDRESS_0 = '';
 // Pool 1
 let POOL_ADDRESS_1 = '';
-let TREASURY_ADDRESS_1 = '';
+let TREASURY_S_ADDRESS_1 = '';
+let TREASURY_A_ADDRESS_1 = '';
+let TREASURY_B_ADDRESS_1 = '';
 let LPT_ADDRESS_1 = '';
-// Pool 2
-let POOL_ADDRESS_2 = '';
-let TREASURY_ADDRESS_2 = '';
-let LPT_ADDRESS_2 = '';
+let VAULT_ADDRESS_1 = '';
 
 describe('Swap library', function () {
   it('Mint 0', function (done) {
@@ -79,19 +78,27 @@ describe('Swap library', function () {
     });
   });
 
-  it('Network', function (done) {
+  it('Pool', function (done) {
     const swap = new Swap();
-    const network = createAccount();
-    const primaryAddress = MINT_ADDRESS_0;
-    const mintAddresses = [MINT_ADDRESS_1, MINT_ADDRESS_2]; // Default mint[0] is primary
-    NETWORK_ADDRESS = network.publicKey.toBase58();
-    createStrictAccount(swap.swapProgramId).then(vault => {
-      VAULT_ADDRESS = vault.publicKey.toBase58();
-      return swap.initializeNetwork(
-        network,
-        primaryAddress,
+    const treasuryS = createAccount();
+    const treasuryA = createAccount();
+    const treasuryB = createAccount();
+    const lpt = createAccount();
+    const vault = createAccount();
+    TREASURY_S_ADDRESS_0 = treasuryS.publicKey.toBase58();
+    TREASURY_A_ADDRESS_0 = treasuryA.publicKey.toBase58();
+    TREASURY_B_ADDRESS_0 = treasuryB.publicKey.toBase58();
+    LPT_ADDRESS_0 = lpt.publicKey.toBase58();
+    VAULT_ADDRESS_0 = vault.publicKey.toBase58();
+    createStrictAccount(swap.swapProgramId).then(pool => {
+      POOL_ADDRESS_0 = pool.publicKey.toBase58();
+      return swap.initializePool(
+        1000000000000n, 5000000000000n, 200000000000n,
+        pool, lpt,
+        ACCOUNT_ADDRESS_0, MINT_ADDRESS_0, treasuryS,
+        ACCOUNT_ADDRESS_1, MINT_ADDRESS_1, treasuryA,
+        ACCOUNT_ADDRESS_2, MINT_ADDRESS_2, treasuryB,
         vault,
-        mintAddresses,
         payer
       );
     }).then(txId => {
@@ -101,74 +108,29 @@ describe('Swap library', function () {
     });
   });
 
-  it('Pool 0', function (done) {
-    const swap = new Swap();
-    const treasury = createAccount();
-    const lpt = createAccount();
-    TREASURY_ADDRESS_0 = treasury.publicKey.toBase58();
-    LPT_ADDRESS_0 = lpt.publicKey.toBase58();
-    createStrictAccount(swap.swapProgramId).then(pool => {
-      POOL_ADDRESS_0 = pool.publicKey.toBase58();
-      return swap.initializePool(
-        1000000000000n,
-        50000000000n,
-        NETWORK_ADDRESS,
-        pool,
-        treasury,
-        lpt,
-        ACCOUNT_ADDRESS_0,
-        MINT_ADDRESS_0,
-        payer);
-    }).then(txId => {
-      return done();
-    }).catch(er => {
-      return done(er);
-    });
-  });
-
   it('Pool 1', function (done) {
     const swap = new Swap();
-    const treasury = createAccount();
+    const treasuryS = createAccount();
+    const treasuryA = createAccount();
+    const treasuryB = createAccount();
     const lpt = createAccount();
-    TREASURY_ADDRESS_1 = treasury.publicKey.toBase58();
+    const vault = createAccount();
+    TREASURY_S_ADDRESS_1 = treasuryS.publicKey.toBase58();
+    TREASURY_A_ADDRESS_1 = treasuryA.publicKey.toBase58();
+    TREASURY_B_ADDRESS_1 = treasuryB.publicKey.toBase58();
     LPT_ADDRESS_1 = lpt.publicKey.toBase58();
+    VAULT_ADDRESS_1 = vault.publicKey.toBase58();
     createStrictAccount(swap.swapProgramId).then(pool => {
       POOL_ADDRESS_1 = pool.publicKey.toBase58();
       return swap.initializePool(
-        1000000000000n,
-        50000000000n,
-        NETWORK_ADDRESS,
-        pool,
-        treasury,
-        lpt,
-        ACCOUNT_ADDRESS_1,
-        MINT_ADDRESS_1,
-        payer);
-    }).then(txId => {
-      return done();
-    }).catch(er => {
-      return done(er);
-    });
-  });
-
-  it('Pool 2', function (done) {
-    const swap = new Swap();
-    const treasury = createAccount();
-    const lpt = createAccount();
-    TREASURY_ADDRESS_2 = treasury.publicKey.toBase58();
-    LPT_ADDRESS_2 = lpt.publicKey.toBase58();
-    createStrictAccount(swap.swapProgramId).then(pool => {
-      POOL_ADDRESS_2 = pool.publicKey.toBase58();
-      return swap.initializePool(
-        2000000000000n,
-        80000000000n,
-        NETWORK_ADDRESS,
-        pool,
-        treasury,
-        lpt,
-        ACCOUNT_ADDRESS_2,
-        MINT_ADDRESS_2,
-        payer);
+        1000000000000n, 5000000000000n, 200000000000n,
+        pool, lpt,
+        ACCOUNT_ADDRESS_0, MINT_ADDRESS_0, treasuryS,
+        ACCOUNT_ADDRESS_1, MINT_ADDRESS_1, treasuryA,
+        ACCOUNT_ADDRESS_2, MINT_ADDRESS_2, treasuryB,
+        vault,
+        payer
+      );
     }).then(txId => {
       return done();
     }).catch(er => {
@@ -190,24 +152,21 @@ describe('Swap library', function () {
       console.log('MINT_ADDRESS_2:', MINT_ADDRESS_2);
       console.log('ACCOUNT_ADDRESS_2:', ACCOUNT_ADDRESS_2);
       console.log('\n');
-      // Network
-      console.log('NETWORK_ADDRESS:', NETWORK_ADDRESS);
-      console.log('VAULT_ADDRESS:', VAULT_ADDRESS);
-      console.log('\n');
       // Pool 0
       console.log('POOL_ADDRESS_0:', POOL_ADDRESS_0);
-      console.log('TREASURY_ADDRESS_0:', TREASURY_ADDRESS_0);
+      console.log('TREASURY_S_ADDRESS_0:', TREASURY_S_ADDRESS_0);
+      console.log('TREASURY_A_ADDRESS_0:', TREASURY_A_ADDRESS_0);
+      console.log('TREASURY_B_ADDRESS_0:', TREASURY_B_ADDRESS_0);
       console.log('LPT_ADDRESS_0:', LPT_ADDRESS_0);
+      console.log('VAULT_ADDRESS_0:', VAULT_ADDRESS_0);
       console.log('\n');
       // Pool 1
       console.log('POOL_ADDRESS_1:', POOL_ADDRESS_1);
-      console.log('TREASURY_ADDRESS_1:', TREASURY_ADDRESS_1);
+      console.log('TREASURY_S_ADDRESS_1:', TREASURY_S_ADDRESS_1);
+      console.log('TREASURY_A_ADDRESS_1:', TREASURY_A_ADDRESS_1);
+      console.log('TREASURY_B_ADDRESS_1:', TREASURY_B_ADDRESS_1);
       console.log('LPT_ADDRESS_1:', LPT_ADDRESS_1);
-      console.log('\n');
-      // Pool 2
-      console.log('POOL_ADDRESS_2:', POOL_ADDRESS_2);
-      console.log('TREASURY_ADDRESS_2:', TREASURY_ADDRESS_2);
-      console.log('LPT_ADDRESS_2:', LPT_ADDRESS_2);
+      console.log('VAULT_ADDRESS_1:', VAULT_ADDRESS_1);
       console.log('\n');
 
       return done();
@@ -253,41 +212,45 @@ describe('Swap library', function () {
 
     it('Should not initialize pool', function (done) {
       const swap = new Swap();
-      const treasury = createAccount();
+      const treasury_s = createAccount();
+      const treasury_a = createAccount();
+      const treasury_b = createAccount();
       const lpt = createAccount();
+      const vault = createAccount();
       createStrictAccount(swap.swapProgramId).then(pool => {
         return swap.initializePool(
-          1000000000000n,
-          50000000000n,
-          NETWORK_ADDRESS,
-          pool,
-          treasury,
-          lpt,
-          ACCOUNT_ADDRESS_0,
-          MINT_ADDRESS_0,
-          payer);
+          0n, 50000000000n, 50000000000n,
+          pool, lpt,
+          ACCOUNT_ADDRESS_0, MINT_ADDRESS_0, treasury_s,
+          ACCOUNT_ADDRESS_1, MINT_ADDRESS_1, treasury_a,
+          ACCOUNT_ADDRESS_2, MINT_ADDRESS_2, treasury_b,
+          vault,
+          payer
+        );
       }).then(data => {
-        return done('The primary pool should be initialized once');
+        return done('The reserve should be not zero');
       }).catch(er => {
         return done();
       });
     });
 
-    it('Should initialize pool', function (done) {
+    it('Should initialize pool and receive lpt', function (done) {
       const swap = new Swap();
-      const treasury = createAccount();
+      const treasury_s = createAccount();
+      const treasury_a = createAccount();
+      const treasury_b = createAccount();
       const lpt = createAccount();
+      const vault = createAccount();
       createStrictAccount(swap.swapProgramId).then(pool => {
         return swap.initializePool(
-          1000000000000n,
-          50000000000n,
-          NETWORK_ADDRESS,
-          pool,
-          treasury,
-          lpt,
-          ACCOUNT_ADDRESS_1,
-          MINT_ADDRESS_1,
-          payer);
+          1000000000000n, 50000000000n, 50000000000n,
+          pool, lpt,
+          ACCOUNT_ADDRESS_0, MINT_ADDRESS_0, treasury_s,
+          ACCOUNT_ADDRESS_1, MINT_ADDRESS_1, treasury_a,
+          ACCOUNT_ADDRESS_2, MINT_ADDRESS_2, treasury_b,
+          vault,
+          payer
+        );
       }).then(txId => {
         return swap.getLPTData(lpt.publicKey.toBase58());
       }).then(data => {
@@ -297,29 +260,29 @@ describe('Swap library', function () {
       });
     });
 
-    it('Should swap', function (done) {
-      const swap = new Swap();
-      swap.swap(
-        10000000000n,
-        NETWORK_ADDRESS,
-        POOL_ADDRESS_1,
-        TREASURY_ADDRESS_1,
-        ACCOUNT_ADDRESS_1,
-        POOL_ADDRESS_2,
-        TREASURY_ADDRESS_2,
-        ACCOUNT_ADDRESS_2,
-        POOL_ADDRESS_0,
-        TREASURY_ADDRESS_0,
-        VAULT_ADDRESS,
-        payer
-      ).then(txId => {
-        return swap._getAccountData(VAULT_ADDRESS);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      })
-    });
+    //   it('Should swap', function (done) {
+    //     const swap = new Swap();
+    //     swap.swap(
+    //       10000000000n,
+    //       NETWORK_ADDRESS,
+    //       POOL_ADDRESS_1,
+    //       TREASURY_ADDRESS_1,
+    //       ACCOUNT_ADDRESS_1,
+    //       POOL_ADDRESS_2,
+    //       TREASURY_ADDRESS_2,
+    //       ACCOUNT_ADDRESS_2,
+    //       POOL_ADDRESS_0,
+    //       TREASURY_ADDRESS_0,
+    //       VAULT_ADDRESS,
+    //       payer
+    //     ).then(txId => {
+    //       return swap._getAccountData(VAULT_ADDRESS);
+    //     }).then(data => {
+    //       return done();
+    //     }).catch(er => {
+    //       return done(er);
+    //     })
+    //   });
   });
 
   describe('Test LPT', function () {
@@ -340,11 +303,11 @@ describe('Swap library', function () {
         return swap.getLPTData(lptAddress);
       }).then(data => {
         return swap.addLiquidity(
-          100000000000n,
-          POOL_ADDRESS_0,
-          TREASURY_ADDRESS_0,
-          lptAddress,
-          ACCOUNT_ADDRESS_0,
+          100000000000n, 0n, 0n,
+          POOL_ADDRESS_0, lptAddress,
+          ACCOUNT_ADDRESS_0, TREASURY_S_ADDRESS_0,
+          ACCOUNT_ADDRESS_1, TREASURY_A_ADDRESS_0,
+          ACCOUNT_ADDRESS_2, TREASURY_B_ADDRESS_0,
           payer
         );
       }).then(txId => {
@@ -356,138 +319,138 @@ describe('Swap library', function () {
       });
     });
 
-    it('Should remove liquidity', function (done) {
-      const swap = new Swap();
-      swap.removeLiquidity(
-        5000000000n,
-        POOL_ADDRESS_0,
-        TREASURY_ADDRESS_0,
-        LPT_ADDRESS_0,
-        ACCOUNT_ADDRESS_0,
-        payer
-      ).then(txId => {
-        return swap.getLPTData(LPT_ADDRESS_0);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
-    });
+    //   it('Should remove liquidity', function (done) {
+    //     const swap = new Swap();
+    //     swap.removeLiquidity(
+    //       5000000000n,
+    //       POOL_ADDRESS_0,
+    //       TREASURY_ADDRESS_0,
+    //       LPT_ADDRESS_0,
+    //       ACCOUNT_ADDRESS_0,
+    //       payer
+    //     ).then(txId => {
+    //       return swap.getLPTData(LPT_ADDRESS_0);
+    //     }).then(data => {
+    //       return done();
+    //     }).catch(er => {
+    //       return done(er);
+    //     });
+    //   });
 
-    it('Should transfer', function (done) {
-      const swap = new Swap();
-      const lpt = createAccount();
-      const lptAddress = lpt.publicKey.toBase58();
-      swap.initializeLPT(lpt, POOL_ADDRESS_0, payer).then(txId => {
-        return swap.getLPTData(lptAddress);
-      }).then(data => {
-        return swap.transfer(
-          1000000000n,
-          POOL_ADDRESS_0,
-          LPT_ADDRESS_0,
-          lptAddress,
-          payer);
-      }).then(txId => {
-        return swap.getLPTData(lptAddress);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
-    });
+    //   it('Should transfer', function (done) {
+    //     const swap = new Swap();
+    //     const lpt = createAccount();
+    //     const lptAddress = lpt.publicKey.toBase58();
+    //     swap.initializeLPT(lpt, POOL_ADDRESS_0, payer).then(txId => {
+    //       return swap.getLPTData(lptAddress);
+    //     }).then(data => {
+    //       return swap.transfer(
+    //         1000000000n,
+    //         POOL_ADDRESS_0,
+    //         LPT_ADDRESS_0,
+    //         lptAddress,
+    //         payer);
+    //     }).then(txId => {
+    //       return swap.getLPTData(lptAddress);
+    //     }).then(data => {
+    //       return done();
+    //     }).catch(er => {
+    //       return done(er);
+    //     });
+    //   });
 
-    it('Should close LPT & Pool', function (done) {
-      const swap = new Swap();
-      const treasury = createAccount();
-      const lpt = createAccount();
+    //   it('Should close LPT & Pool', function (done) {
+    //     const swap = new Swap();
+    //     const treasury = createAccount();
+    //     const lpt = createAccount();
 
-      let poolAddress = '';
-      const treasuryAddress = treasury.publicKey.toBase58();
-      const lptAddress = lpt.publicKey.toBase58();
-      let dstAddress = null;
+    //     let poolAddress = '';
+    //     const treasuryAddress = treasury.publicKey.toBase58();
+    //     const lptAddress = lpt.publicKey.toBase58();
+    //     let dstAddress = null;
 
-      payer.getAccount().then(re => {
-        dstAddress = re;
-        return createStrictAccount(swap.swapProgramId)
-      }).then(pool => {
-        poolAddress = pool.publicKey.toBase58();
-        return swap.initializePool(
-          1000000000000n,
-          50000000000n,
-          NETWORK_ADDRESS,
-          pool,
-          treasury,
-          lpt,
-          ACCOUNT_ADDRESS_1,
-          MINT_ADDRESS_1,
-          payer
-        );
-      }).then(txId => {
-        return swap.removeLiquidity(
-          50000000000n,
-          poolAddress,
-          treasuryAddress,
-          lptAddress,
-          ACCOUNT_ADDRESS_1,
-          payer
-        );
-      }).then(txId => {
-        return swap.closeLPT(lptAddress, dstAddress, payer);
-      }).then(txId => {
-        return swap.closePool(poolAddress, treasuryAddress, dstAddress, payer);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
-    });
+    //     payer.getAccount().then(re => {
+    //       dstAddress = re;
+    //       return createStrictAccount(swap.swapProgramId)
+    //     }).then(pool => {
+    //       poolAddress = pool.publicKey.toBase58();
+    //       return swap.initializePool(
+    //         1000000000000n,
+    //         50000000000n,
+    //         NETWORK_ADDRESS,
+    //         pool,
+    //         treasury,
+    //         lpt,
+    //         ACCOUNT_ADDRESS_1,
+    //         MINT_ADDRESS_1,
+    //         payer
+    //       );
+    //     }).then(txId => {
+    //       return swap.removeLiquidity(
+    //         50000000000n,
+    //         poolAddress,
+    //         treasuryAddress,
+    //         lptAddress,
+    //         ACCOUNT_ADDRESS_1,
+    //         payer
+    //       );
+    //     }).then(txId => {
+    //       return swap.closeLPT(lptAddress, dstAddress, payer);
+    //     }).then(txId => {
+    //       return swap.closePool(poolAddress, treasuryAddress, dstAddress, payer);
+    //     }).then(data => {
+    //       return done();
+    //     }).catch(er => {
+    //       return done(er);
+    //     });
+    //   });
   });
 
-  describe('Test Network', function () {
-    it('Should be a valid network data', function (done) {
-      const swap = new Swap();
-      swap.getNetworkData(NETWORK_ADDRESS).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
-    });
+  // describe('Test Network', function () {
+  //   it('Should be a valid network data', function (done) {
+  //     const swap = new Swap();
+  //     swap.getNetworkData(NETWORK_ADDRESS).then(data => {
+  //       return done();
+  //     }).catch(er => {
+  //       return done(er);
+  //     });
+  //   });
 
-    it('Should freeze/thaw pool', function (done) {
-      const swap = new Swap();
-      swap.freezePool(NETWORK_ADDRESS, POOL_ADDRESS_2, payer).then(txId => {
-        return swap.thawPool(NETWORK_ADDRESS, POOL_ADDRESS_2, payer);
-      }).then(txId => {
-        return swap.getPoolData(POOL_ADDRESS_2);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
-    });
+  //   it('Should freeze/thaw pool', function (done) {
+  //     const swap = new Swap();
+  //     swap.freezePool(NETWORK_ADDRESS, POOL_ADDRESS_2, payer).then(txId => {
+  //       return swap.thawPool(NETWORK_ADDRESS, POOL_ADDRESS_2, payer);
+  //     }).then(txId => {
+  //       return swap.getPoolData(POOL_ADDRESS_2);
+  //     }).then(data => {
+  //       return done();
+  //     }).catch(er => {
+  //       return done(er);
+  //     });
+  //   });
 
-    it('Should earn', function (done) {
-      const swap = new Swap();
-      const amount = 1000n;
-      swap.earn(amount, NETWORK_ADDRESS, VAULT_ADDRESS, ACCOUNT_ADDRESS_0, payer).then(txId => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
-    });
+  //   it('Should earn', function (done) {
+  //     const swap = new Swap();
+  //     const amount = 1000n;
+  //     swap.earn(amount, NETWORK_ADDRESS, VAULT_ADDRESS, ACCOUNT_ADDRESS_0, payer).then(txId => {
+  //       return done();
+  //     }).catch(er => {
+  //       return done(er);
+  //     });
+  //   });
 
-    it('Should transfer ownership', function (done) {
-      const swap = new Swap();
-      const newOwner = createAccount();
-      swap.transferOwnership(newOwner, NETWORK_ADDRESS, payer).then(txId => {
-        return swap.getNetworkData(NETWORK_ADDRESS);
-      }).then(data => {
-        if (data.owner == newOwner.publicKey.toBase58()) return done();
-        return done('Cannot transfer ownership');
-      }).catch(er => {
-        return done(er);
-      });
-    });
-  });
+  //   it('Should transfer ownership', function (done) {
+  //     const swap = new Swap();
+  //     const newOwner = createAccount();
+  //     swap.transferOwnership(newOwner, NETWORK_ADDRESS, payer).then(txId => {
+  //       return swap.getNetworkData(NETWORK_ADDRESS);
+  //     }).then(data => {
+  //       if (data.owner == newOwner.publicKey.toBase58()) return done();
+  //       return done('Cannot transfer ownership');
+  //     }).catch(er => {
+  //       return done(er);
+  //     });
+  //   });
+  // });
 
 });
