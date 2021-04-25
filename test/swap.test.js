@@ -299,7 +299,7 @@ describe('Swap library', function () {
         return swap.getLPTData(lptAddress);
       }).then(data => {
         return swap.addLiquidity(
-          100000000000n, 0n, 0n,
+          100000000000n, 100000000000n, 100000000000n,
           POOL_ADDRESS_0, lptAddress,
           ACCOUNT_ADDRESS_0, TREASURY_S_ADDRESS_0,
           ACCOUNT_ADDRESS_1, TREASURY_A_ADDRESS_0,
