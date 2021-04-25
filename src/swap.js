@@ -758,6 +758,7 @@ class Swap extends Tx {
     treasuryAAddress,
     treasuryBAddress,
     dstAddress,
+    vaultAddress,
     wallet
   ) => {
     return new Promise((resolve, reject) => {
@@ -766,6 +767,7 @@ class Swap extends Tx {
       if (!account.isAddress(treasuryAAddress)) return reject('Invalid treasury A address');
       if (!account.isAddress(treasuryBAddress)) return reject('Invalid treasury B address');
       if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
+      if (!account.isAddress(vaultAddress)) return reject('Invalid vault address');
 
       let transaction = new Transaction();
       const poolPublicKey = account.fromAddress(poolAddress);
@@ -773,6 +775,7 @@ class Swap extends Tx {
       const treasuryAPublicKey = account.fromAddress(treasuryAAddress);
       const treasuryBPublicKey = account.fromAddress(treasuryBAddress);
       const dstPublicKey = account.fromAddress(dstAddress);
+      const vaultPublicKey = account.fromAddress(vaultAddress);
       let treasurerPublicKey = null;
 
       return this._addRecentCommitment(transaction).then(txWithCommitment => {
@@ -793,6 +796,7 @@ class Swap extends Tx {
             { pubkey: treasuryAPublicKey, isSigner: false, isWritable: true },
             { pubkey: treasuryBPublicKey, isSigner: false, isWritable: true },
             { pubkey: dstPublicKey, isSigner: false, isWritable: true },
+            { pubkey: vaultPublicKey, isSigner: false, isWritable: true },
             { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
           ],

@@ -263,7 +263,6 @@ describe('Swap library', function () {
     it('Should swap', function (done) {
       const swap = new Swap();
       swap.getPoolData(POOL_ADDRESS_0).then(data => {
-        console.log(data.reserve_s, data.reserve_a, data.reserve_b)
         return swap.swap(
           10000000000n,
           POOL_ADDRESS_0, VAULT_ADDRESS_0,
@@ -273,7 +272,6 @@ describe('Swap library', function () {
           payer
         );
       }).then(txId => {
-        console.log(txId)
         return swap._getAccountData(VAULT_ADDRESS_0);
       }).then(data => {
         return done();
@@ -380,6 +378,7 @@ describe('Swap library', function () {
       const treasurySAddress = treasuryS.publicKey.toBase58();
       const treasuryAAddress = treasuryA.publicKey.toBase58();
       const treasuryBAddress = treasuryB.publicKey.toBase58();
+      const vaultAddress = vault.publicKey.toBase58();
       let dstAddress = null;
 
       payer.getAccount().then(re => {
@@ -412,6 +411,7 @@ describe('Swap library', function () {
           poolAddress,
           treasurySAddress, treasuryAAddress, treasuryBAddress,
           dstAddress,
+          vaultAddress,
           payer
         );
       }).then(txId => {
