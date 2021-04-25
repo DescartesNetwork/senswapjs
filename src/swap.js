@@ -410,19 +410,34 @@ class Swap extends Tx {
     });
   }
 
-  removeLiquidity = (lpt, poolAddress, treasuryAddress, lptAddress, dstAddress, wallet) => {
+  removeLiquidity = (
+    lpt,
+    poolAddress, lptAddress,
+    dstSAddress, treasurySAddress,
+    dstAAddress, treasuryAAddress,
+    dstBAddress, treasuryBAddress,
+    wallet
+  ) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
-      if (!account.isAddress(treasuryAddress)) return reject('Invalid treasury address');
       if (!account.isAddress(lptAddress)) return reject('Invalid lpt address');
-      if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
+      if (!account.isAddress(dstSAddress)) return reject('Invalid destination S address');
+      if (!account.isAddress(treasurySAddress)) return reject('Invalid treasury S address');
+      if (!account.isAddress(dstAAddress)) return reject('Invalid destination A address');
+      if (!account.isAddress(treasuryAAddress)) return reject('Invalid treasury A address');
+      if (!account.isAddress(dstBAddress)) return reject('Invalid destination B address');
+      if (!account.isAddress(treasuryBAddress)) return reject('Invalid treasury B address');
 
       let transaction = new Transaction();
       const poolPublicKey = account.fromAddress(poolAddress);
-      const treasuryPublicKey = account.fromAddress(treasuryAddress);
-      let treasurerPublicKey = null
       const lptPublicKey = account.fromAddress(lptAddress);
-      const dstPublicKey = account.fromAddress(dstAddress);
+      const dstSPublicKey = account.fromAddress(dstSAddress);
+      const treasurySPublicKey = account.fromAddress(treasurySAddress);
+      const dstAPublicKey = account.fromAddress(dstAAddress);
+      const treasuryAPublicKey = account.fromAddress(treasuryAAddress);
+      const dstBPublicKey = account.fromAddress(dstBAddress);
+      const treasuryBPublicKey = account.fromAddress(treasuryBAddress);
+      let treasurerPublicKey = null;
 
       return this._addRecentCommitment(transaction).then(txWithCommitment => {
         transaction = txWithCommitment;
@@ -434,16 +449,20 @@ class Swap extends Tx {
       }).then(payerAddress => {
         const payerPublicKey = account.fromAddress(payerAddress);
         const layout = new soproxABI.struct(
-          [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u128' }],
-          { code: 4, lpt }
+          [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u64' }],
+          { code: 3, lpt }
         );
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
             { pubkey: poolPublicKey, isSigner: false, isWritable: true },
-            { pubkey: treasuryPublicKey, isSigner: false, isWritable: true },
             { pubkey: lptPublicKey, isSigner: false, isWritable: true },
-            { pubkey: dstPublicKey, isSigner: false, isWritable: true },
+            { pubkey: dstSPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasurySPublicKey, isSigner: false, isWritable: true },
+            { pubkey: dstAPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasuryAPublicKey, isSigner: false, isWritable: true },
+            { pubkey: dstBPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasuryBPublicKey, isSigner: false, isWritable: true },
             { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
           ],
@@ -466,76 +485,55 @@ class Swap extends Tx {
 
   swap = (
     amount,
-    networkAddress,
-    bidPoolAddress,
-    bidTreasuryAddress,
-    srcAddress,
-    askPoolAddress,
-    askTreasuryAddress,
-    dstAddress,
-    senPoolAddress,
-    senTreasuryAddress,
-    vaultAddress,
+    poolAddress, vaultAddress,
+    srcAddress, treasuryBidAddress,
+    dstAddress, treasuryAskAddress,
+    treasurySenAddress,
     wallet,
   ) => {
     return new Promise((resolve, reject) => {
-      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
-      if (!account.isAddress(bidPoolAddress)) return reject('Invalid bid pool address');
-      if (!account.isAddress(bidTreasuryAddress)) return reject('Invalid bid treasury address');
-      if (!account.isAddress(srcAddress)) return reject('Invalid source address');
-      if (!account.isAddress(askPoolAddress)) return reject('Invalid ask pool address');
-      if (!account.isAddress(askTreasuryAddress)) return reject('Invalid ask treasury address');
-      if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
-      if (!account.isAddress(senPoolAddress)) return reject('Invalid sen pool address');
-      if (!account.isAddress(senTreasuryAddress)) return reject('Invalid sen treasury address');
+      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
       if (!account.isAddress(vaultAddress)) return reject('Invalid vault address');
+      if (!account.isAddress(srcAddress)) return reject('Invalid source address');
+      if (!account.isAddress(treasuryBidAddress)) return reject('Invalid treasury bid address');
+      if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
+      if (!account.isAddress(treasuryAskAddress)) return reject('Invalid treasury ask address');
+      if (!account.isAddress(treasurySenAddress)) return reject('Invalid treasury sen address');
 
       let transaction = new Transaction();
-      const networkPublicKey = account.fromAddress(networkAddress);
-      const bidPoolPublicKey = account.fromAddress(bidPoolAddress);
-      const bidTreasuryPublicKey = account.fromAddress(bidTreasuryAddress);
-      const srcPublicKey = account.fromAddress(srcAddress);
-      const askPoolPublicKey = account.fromAddress(askPoolAddress);
-      const askTreasuryPublicKey = account.fromAddress(askTreasuryAddress);
-      let askTreasurerPublicKey = null;
-      const dstPublicKey = account.fromAddress(dstAddress);
-      const senPoolPublicKey = account.fromAddress(senPoolAddress);
-      const senTreasuryPublicKey = account.fromAddress(senTreasuryAddress);
-      let senTreasurerPublicKey = null;
+      const poolPublicKey = account.fromAddress(poolAddress);
       const vaultPublicKey = account.fromAddress(vaultAddress);
+      const srcPublicKey = account.fromAddress(srcAddress);
+      const treasuryBidPublicKey = account.fromAddress(treasuryBidAddress);
+      const dstPublicKey = account.fromAddress(dstAddress);
+      const treasuryAskPublicKey = account.fromAddress(treasuryAskAddress);
+      const treasurySenPublicKey = account.fromAddress(treasurySenAddress);
+      let treasurerPublicKey = null;
 
       return this._addRecentCommitment(transaction).then(txWithCommitment => {
         transaction = txWithCommitment;
-        const ask_seed = [askPoolPublicKey.toBuffer()];
-        return PublicKey.createProgramAddress(ask_seed, this.swapProgramId)
+        const seed = [poolPublicKey.toBuffer()];
+        return PublicKey.createProgramAddress(seed, this.swapProgramId)
       }).then(publicKeyFromSeed => {
-        askTreasurerPublicKey = publicKeyFromSeed;
-        const sen_seed = [senPoolPublicKey.toBuffer()];
-        return PublicKey.createProgramAddress(sen_seed, this.swapProgramId);
-      }).then(publicKeyFromSeed => {
-        senTreasurerPublicKey = publicKeyFromSeed;
+        treasurerPublicKey = publicKeyFromSeed;
         return wallet.getAccount();
       }).then(payerAddress => {
         const payerPublicKey = account.fromAddress(payerAddress);
         const layout = new soproxABI.struct(
           [{ key: 'code', type: 'u8' }, { key: 'amount', type: 'u64' }],
-          { code: 5, amount }
+          { code: 4, amount }
         );
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
-            { pubkey: networkPublicKey, isSigner: false, isWritable: false },
-            { pubkey: bidPoolPublicKey, isSigner: false, isWritable: true },
-            { pubkey: bidTreasuryPublicKey, isSigner: false, isWritable: true },
-            { pubkey: srcPublicKey, isSigner: false, isWritable: true },
-            { pubkey: askPoolPublicKey, isSigner: false, isWritable: true },
-            { pubkey: askTreasuryPublicKey, isSigner: false, isWritable: true },
-            { pubkey: dstPublicKey, isSigner: false, isWritable: true },
-            { pubkey: askTreasurerPublicKey, isSigner: false, isWritable: false },
-            { pubkey: senPoolPublicKey, isSigner: false, isWritable: true },
-            { pubkey: senTreasuryPublicKey, isSigner: false, isWritable: true },
+            { pubkey: poolPublicKey, isSigner: false, isWritable: true },
             { pubkey: vaultPublicKey, isSigner: false, isWritable: true },
-            { pubkey: senTreasurerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: srcPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasuryBidPublicKey, isSigner: false, isWritable: true },
+            { pubkey: dstPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasuryAskPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasurySenPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
@@ -555,14 +553,12 @@ class Swap extends Tx {
     });
   }
 
-  transfer = (lpt, poolAddress, srcLPTAddress, dstLPTAddress, wallet) => {
+  transfer = (lpt, srcLPTAddress, dstLPTAddress, wallet) => {
     return new Promise((resolve, reject) => {
-      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
       if (!account.isAddress(srcLPTAddress)) return reject('Invalid source LPT address');
       if (!account.isAddress(dstLPTAddress)) return reject('Invalid destination LPT address');
 
       let transaction = new Transaction();
-      const poolPublicKey = account.fromAddress(poolAddress);
       const srcLPTPublicKey = account.fromAddress(srcLPTAddress);
       const dstLPTPublicKey = account.fromAddress(dstLPTAddress);
 
@@ -572,13 +568,12 @@ class Swap extends Tx {
       }).then(payerAddress => {
         const payerPublicKey = account.fromAddress(payerAddress);
         const layout = new soproxABI.struct(
-          [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u128' }],
-          { code: 6, lpt }
+          [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u64' }],
+          { code: 5, lpt }
         );
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
-            { pubkey: poolPublicKey, isSigner: false, isWritable: false },
             { pubkey: srcLPTPublicKey, isSigner: false, isWritable: true },
             { pubkey: dstLPTPublicKey, isSigner: false, isWritable: true },
           ],
@@ -599,13 +594,46 @@ class Swap extends Tx {
     });
   }
 
-  freezePool = (networkAddress, poolAddress, wallet) => {
+  freezePool = (poolAddress, wallet) => {
     return new Promise((resolve, reject) => {
-      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
 
       let transaction = new Transaction();
-      const networkPublicKey = account.fromAddress(networkAddress);
+      const poolPublicKey = account.fromAddress(poolAddress);
+
+      return this._addRecentCommitment(transaction).then(txWithCommitment => {
+        transaction = txWithCommitment;
+        return wallet.getAccount();
+      }).then(payerAddress => {
+        const payerPublicKey = account.fromAddress(payerAddress);
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 6 });
+        const instruction = new TransactionInstruction({
+          keys: [
+            { pubkey: payerPublicKey, isSigner: true, isWritable: false },
+            { pubkey: poolPublicKey, isSigner: false, isWritable: true },
+          ],
+          programId: this.swapProgramId,
+          data: layout.toBuffer()
+        });
+        transaction.add(instruction);
+        transaction.feePayer = payerPublicKey;
+        return wallet.sign(transaction);
+      }).then(payerSig => {
+        this._addSignature(transaction, payerSig);
+        return this._sendTransaction(transaction);
+      }).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  thawPool = (poolAddress, wallet) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
+
+      let transaction = new Transaction();
       const poolPublicKey = account.fromAddress(poolAddress);
 
       return this._addRecentCommitment(transaction).then(txWithCommitment => {
@@ -617,7 +645,6 @@ class Swap extends Tx {
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
-            { pubkey: networkPublicKey, isSigner: false, isWritable: false },
             { pubkey: poolPublicKey, isSigner: false, isWritable: true },
           ],
           programId: this.swapProgramId,
@@ -637,59 +664,21 @@ class Swap extends Tx {
     });
   }
 
-  thawPool = (networkAddress, poolAddress, wallet) => {
+  earn = (amount, poolAddress, vaultAddress, dstAddress, wallet) => {
     return new Promise((resolve, reject) => {
-      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
-
-      let transaction = new Transaction();
-      const networkPublicKey = account.fromAddress(networkAddress);
-      const poolPublicKey = account.fromAddress(poolAddress);
-
-      return this._addRecentCommitment(transaction).then(txWithCommitment => {
-        transaction = txWithCommitment;
-        return wallet.getAccount();
-      }).then(payerAddress => {
-        const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 8 });
-        const instruction = new TransactionInstruction({
-          keys: [
-            { pubkey: payerPublicKey, isSigner: true, isWritable: false },
-            { pubkey: networkPublicKey, isSigner: false, isWritable: false },
-            { pubkey: poolPublicKey, isSigner: false, isWritable: true },
-          ],
-          programId: this.swapProgramId,
-          data: layout.toBuffer()
-        });
-        transaction.add(instruction);
-        transaction.feePayer = payerPublicKey;
-        return wallet.sign(transaction);
-      }).then(payerSig => {
-        this._addSignature(transaction, payerSig);
-        return this._sendTransaction(transaction);
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
-  }
-
-  earn = (amount, networkAddress, vaultAddress, dstAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
       if (!account.isAddress(vaultAddress)) return reject('Invalid vault address');
       if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
 
       let transaction = new Transaction();
-      const networkPublicKey = account.fromAddress(networkAddress);
+      const poolPublicKey = account.fromAddress(poolAddress);
       const vaultPublicKey = account.fromAddress(vaultAddress);
       let treasurerPublicKey = null;
       const dstPublicKey = account.fromAddress(dstAddress);
 
       return this._addRecentCommitment(transaction).then(txWithCommitment => {
         transaction = txWithCommitment;
-        const seed = [vaultPublicKey.toBuffer()];
+        const seed = [poolPublicKey.toBuffer()];
         return PublicKey.createProgramAddress(seed, this.swapProgramId)
       }).then(publicKeyFromSeed => {
         treasurerPublicKey = publicKeyFromSeed;
@@ -698,11 +687,11 @@ class Swap extends Tx {
         const payerPublicKey = account.fromAddress(payerAddress);
         const layout = new soproxABI.struct(
           [{ key: 'code', type: 'u8' }, { key: 'amount', type: 'u64' }],
-          { code: 9, amount });
+          { code: 8, amount });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
-            { pubkey: networkPublicKey, isSigner: false, isWritable: false },
+            { pubkey: poolPublicKey, isSigner: false, isWritable: false },
             { pubkey: vaultPublicKey, isSigner: false, isWritable: true },
             { pubkey: dstPublicKey, isSigner: false, isWritable: true },
             { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
@@ -739,7 +728,7 @@ class Swap extends Tx {
         return wallet.getAccount();
       }).then(payerAddress => {
         const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 10 });
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 9 });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
@@ -763,17 +752,28 @@ class Swap extends Tx {
     });
   }
 
-  closePool = (poolAddress, treasuryAddress, dstAddress, wallet) => {
+  closePool = (
+    poolAddress,
+    treasurySAddress,
+    treasuryAAddress,
+    treasuryBAddress,
+    dstAddress,
+    wallet
+  ) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
-      if (!account.isAddress(treasuryAddress)) return reject('Invalid treasury address');
+      if (!account.isAddress(treasurySAddress)) return reject('Invalid treasury S address');
+      if (!account.isAddress(treasuryAAddress)) return reject('Invalid treasury A address');
+      if (!account.isAddress(treasuryBAddress)) return reject('Invalid treasury B address');
       if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
 
       let transaction = new Transaction();
       const poolPublicKey = account.fromAddress(poolAddress);
-      const treasuryPublicKey = account.fromAddress(treasuryAddress);
-      let treasurerPublicKey = null;
+      const treasurySPublicKey = account.fromAddress(treasurySAddress);
+      const treasuryAPublicKey = account.fromAddress(treasuryAAddress);
+      const treasuryBPublicKey = account.fromAddress(treasuryBAddress);
       const dstPublicKey = account.fromAddress(dstAddress);
+      let treasurerPublicKey = null;
 
       return this._addRecentCommitment(transaction).then(txWithCommitment => {
         transaction = txWithCommitment;
@@ -784,12 +784,14 @@ class Swap extends Tx {
         return wallet.getAccount();
       }).then(payerAddress => {
         const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 11 });
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 10 });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
             { pubkey: poolPublicKey, isSigner: false, isWritable: true },
-            { pubkey: treasuryPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasurySPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasuryAPublicKey, isSigner: false, isWritable: true },
+            { pubkey: treasuryBPublicKey, isSigner: false, isWritable: true },
             { pubkey: dstPublicKey, isSigner: false, isWritable: true },
             { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
@@ -811,23 +813,25 @@ class Swap extends Tx {
     });
   }
 
-  transferOwnership = (newOwner, networkAddress, wallet) => {
+  transferLPTOwnership = (lptAddress, newOwnerAddress, wallet) => {
     return new Promise((resolve, reject) => {
-      if (!account.isAddress(networkAddress)) return reject('Invalid network address');
+      if (!account.isAddress(lptAddress)) return reject('Invalid LPT address');
+      if (!account.isAddress(newOwnerAddress)) return reject('Invalid new owner address');
 
       let transaction = new Transaction();
-      const networkPublicKey = account.fromAddress(networkAddress);
+      const lptPublicKey = account.fromAddress(lptAddress);
+      const newOwnerPublicKey = account.fromAddress(newOwnerAddress);
       return this._addRecentCommitment(transaction).then(txWithCommitment => {
         transaction = txWithCommitment;
         return wallet.getAccount();
       }).then(payerAddress => {
         const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 12 });
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 11 });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
-            { pubkey: newOwner.publicKey, isSigner: true, isWritable: false },
-            { pubkey: networkPublicKey, isSigner: false, isWritable: true },
+            { pubkey: lptPublicKey, isSigner: false, isWritable: true },
+            { pubkey: newOwnerPublicKey, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()
@@ -837,9 +841,43 @@ class Swap extends Tx {
         return wallet.sign(transaction);
       }).then(payerSig => {
         this._addSignature(transaction, payerSig);
-        return this._sign(transaction, newOwner);
-      }).then(newOwnerSig => {
-        this._addSignature(transaction, newOwnerSig);
+        return this._sendTransaction(transaction);
+      }).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  transferPoolOwnership = (poolAddress, newOwnerAddress, wallet) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
+      if (!account.isAddress(newOwnerAddress)) return reject('Invalid new owner address');
+
+      let transaction = new Transaction();
+      const poolPublicKey = account.fromAddress(poolAddress);
+      const newOwnerPublicKey = account.fromAddress(newOwnerAddress);
+      return this._addRecentCommitment(transaction).then(txWithCommitment => {
+        transaction = txWithCommitment;
+        return wallet.getAccount();
+      }).then(payerAddress => {
+        const payerPublicKey = account.fromAddress(payerAddress);
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 12 });
+        const instruction = new TransactionInstruction({
+          keys: [
+            { pubkey: payerPublicKey, isSigner: true, isWritable: false },
+            { pubkey: poolPublicKey, isSigner: false, isWritable: true },
+            { pubkey: newOwnerPublicKey, isSigner: false, isWritable: false },
+          ],
+          programId: this.swapProgramId,
+          data: layout.toBuffer()
+        });
+        transaction.add(instruction);
+        transaction.feePayer = payerPublicKey;
+        return wallet.sign(transaction);
+      }).then(payerSig => {
+        this._addSignature(transaction, payerSig);
         return this._sendTransaction(transaction);
       }).then(txId => {
         return resolve(txId);
