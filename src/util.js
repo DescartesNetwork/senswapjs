@@ -22,21 +22,25 @@ util.toSymbol = (symbol) => {
   return symbol.join('').replace(/\u0000/g, '').replace(/-/g, '');
 }
 
-util.parseCGK = (cgk) => {
+util.parseCGK = (ticket = 'solana') => {
   return new Promise((resolve, reject) => {
     return axios({
       method: 'get',
-      url: cgk,
+      url: 'https://api.coingecko.com/api/v3/coins/' + ticket,
     }).then(({ data: {
       image: { large, small, thumb },
       symbol: refSymbol,
       name,
-      platforms: { solana }
+      platforms: { solana },
+      market_cap_rank: rank,
+      market_data: {
+        current_price: { usd }
+      }
     } }) => {
       const icon = large || thumb || small;
       const symbol = refSymbol.toUpperCase();
       const address = solana;
-      return resolve({ icon, symbol, name, address });
+      return resolve({ icon, symbol, name, address, rank, usd });
     }).catch(er => {
       return reject(er);
     });
