@@ -34,17 +34,17 @@ util.parseCGK = (ticket = 'solana') => {
       platforms: { solana },
       market_cap_rank: rank,
       market_data: {
-        current_price: { usd }
+        current_price: { usd: price },
+        total_volume: { usd: totalVolume },
+        price_change_percentage_24h: priceChange,
       },
-      total_volume: { usd: totalVolume },
-      price_change_percentage_24h: priceChange,
     } }) => {
       const icon = large || thumb || small;
       const symbol = refSymbol.toUpperCase();
       const address = solana;
       return resolve({
         icon, symbol, name, address,
-        rank, usd, priceChange, totalVolume
+        rank, price, priceChange, totalVolume
       });
     }).catch(er => {
       return reject(er);
