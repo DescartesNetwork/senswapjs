@@ -40,4 +40,4 @@ class WalletInterface {
 
 }
 
-export default WalletInterface;
+module.exports = WalletInterface;
