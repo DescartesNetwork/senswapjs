@@ -1,7 +1,7 @@
 const nacl = require('tweetnacl');
 
 const account = require('../account');
-const storage = require('/storage');
+const storage = require('./storage');
 const WalletInterface = require('./walletInterface');
 
 

@@ -1,7 +1,7 @@
 const bs58 = require('bs58');
 
 const account = require('../account');
-const storage = require('/storage');
+const storage = require('./storage');
 const WalletInterface = require('./walletInterface');
 
 
