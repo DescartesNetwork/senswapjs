@@ -42,12 +42,12 @@ class SPLT extends Tx {
   watchAndFetch = (callback) => {
     return this.watch((er, re) => {
       if (er) return callback(er, null);
-      const { type, accountId } = re;
+      const { type, address } = re;
       let getData = () => { }
       if (type === 'account') getData = this.getAccountData;
       if (type === 'mint') getData = this.getMintData;
       if (type === 'multisig') getData = this.getMultiSigData;
-      return getData(accountId).then(data => {
+      return getData(address).then(data => {
         return callback(null, data);
       }).catch(er => {
         return callback(er, null);
@@ -57,6 +57,7 @@ class SPLT extends Tx {
 
   watch = (callback) => {
     return this.connection.onProgramAccountChange(this.spltProgramId, ({ accountId, accountInfo: { data } }) => {
+      const address = accountId.toBase58();
       const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
       const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
       const multisigSpace = (new soproxABI.struct(schema.MULTISIG_SCHEMA)).space;
@@ -65,7 +66,7 @@ class SPLT extends Tx {
       if (data.length === mintSpace) type = 'mint';
       if (data.length === multisigSpace) type = 'multisig';
       if (!type) return callback('Unmatched type', null);
-      return callback(null, { type, accountId });
+      return callback(null, { type, address });
     });
   }
 

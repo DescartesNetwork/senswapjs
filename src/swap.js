@@ -29,11 +29,11 @@ class Swap extends Tx {
   watchAndFetch = (callback) => {
     return this.watch((er, re) => {
       if (er) return callback(er, null);
-      const { type, accountId } = re;
+      const { type, address } = re;
       let getData = () => { }
       if (type === 'pool') getData = this.getPoolData;
       if (type === 'lpt') getData = this.getLPTData;
-      return getData(accountId).then(data => {
+      return getData(address).then(data => {
         return callback(null, data);
       }).catch(er => {
         return callback(er, null);
@@ -43,13 +43,14 @@ class Swap extends Tx {
 
   watch = (callback) => {
     return this.connection.onProgramAccountChange(this.swapProgramId, ({ accountId, accountInfo: { data } }) => {
+      const address = accountId.toBase58();
       const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
       const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
       let type = null;
       if (data.length === poolSpace) type = 'pool';
       if (data.length === lptSpace) type = 'lpt';
       if (!type) return callback('Unmatched type', null);
-      return callback(null, { type, accountId });
+      return callback(null, { type, address });
     });
   }
 
