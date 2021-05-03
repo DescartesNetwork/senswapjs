@@ -33,4 +33,4 @@ storage.clear = (key) => {
   storage.set(key, null);
 }
 
-export default storage;
+module.exports = storage;
