@@ -18,8 +18,8 @@ schema.POOL_STATE = {
 schema.POOL_SCHEMA = [
   { key: 'owner', type: 'pub' },
   { key: 'state', type: 'u8' },
-  { key: 'vault', type: 'pub' },
   { key: 'mint_lpt', type: 'pub' },
+  { key: 'vault', type: 'pub' },
 
   { key: 'mint_s', type: 'pub' },
   { key: 'treasury_s', type: 'pub' },

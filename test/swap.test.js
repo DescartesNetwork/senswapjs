@@ -32,98 +32,92 @@ let TREASURY_A_ADDRESS_1 = '';
 let TREASURY_B_ADDRESS_1 = '';
 
 describe('Swap library', function () {
-  // it('Mint 0', function (done) {
-  //   const mint = createAccount();
-  //   const account = createAccount();
-  //   MINT_ADDRESS_0 = mint.publicKey.toBase58();
-  //   ACCOUNT_ADDRESS_0 = account.publicKey.toBase58();
-  //   const splt = new SPLT();
-  //   splt.initializeMint(9, null, mint, payer).then(txId => {
-  //     return splt.initializeAccount(account, MINT_ADDRESS_0, payer);
-  //   }).then(txId => {
-  //     return splt.mintTo(5000000000000000000n, MINT_ADDRESS_0, ACCOUNT_ADDRESS_0, payer);
-  //   }).then(txId => {
-  //     return done();
-  //   }).catch(er => {
-  //     return done(er);
-  //   });
-  // });
+  it('Mint 0', function (done) {
+    const mint = createAccount();
+    const account = createAccount();
+    MINT_ADDRESS_0 = mint.publicKey.toBase58();
+    ACCOUNT_ADDRESS_0 = account.publicKey.toBase58();
+    const splt = new SPLT();
+    splt.initializeMint(9, null, mint, payer).then(txId => {
+      return splt.initializeAccount(account, MINT_ADDRESS_0, payer);
+    }).then(txId => {
+      return splt.mintTo(5000000000000000000n, MINT_ADDRESS_0, ACCOUNT_ADDRESS_0, payer);
+    }).then(txId => {
+      return done();
+    }).catch(er => {
+      return done(er);
+    });
+  });
 
-  // it('Mint 1', function (done) {
-  //   const mint = createAccount();
-  //   const account = createAccount();
-  //   MINT_ADDRESS_1 = mint.publicKey.toBase58();
-  //   ACCOUNT_ADDRESS_1 = account.publicKey.toBase58();
-  //   const splt = new SPLT();
-  //   splt.initializeMint(9, null, mint, payer).then(txId => {
-  //     return splt.initializeAccount(account, MINT_ADDRESS_1, payer);
-  //   }).then(txId => {
-  //     return splt.mintTo(5000000000000000000n, MINT_ADDRESS_1, ACCOUNT_ADDRESS_1, payer);
-  //   }).then(txId => {
-  //     return done();
-  //   }).catch(er => {
-  //     return done(er);
-  //   });
-  // });
+  it('Mint 1', function (done) {
+    const mint = createAccount();
+    const account = createAccount();
+    MINT_ADDRESS_1 = mint.publicKey.toBase58();
+    ACCOUNT_ADDRESS_1 = account.publicKey.toBase58();
+    const splt = new SPLT();
+    splt.initializeMint(9, null, mint, payer).then(txId => {
+      return splt.initializeAccount(account, MINT_ADDRESS_1, payer);
+    }).then(txId => {
+      return splt.mintTo(5000000000000000000n, MINT_ADDRESS_1, ACCOUNT_ADDRESS_1, payer);
+    }).then(txId => {
+      return done();
+    }).catch(er => {
+      return done(er);
+    });
+  });
 
-  // it('Mint 2', function (done) {
-  //   const mint = createAccount();
-  //   const account = createAccount();
-  //   MINT_ADDRESS_2 = mint.publicKey.toBase58();
-  //   ACCOUNT_ADDRESS_2 = account.publicKey.toBase58();
-  //   const splt = new SPLT();
-  //   splt.initializeMint(9, null, mint, payer).then(txId => {
-  //     return splt.initializeAccount(account, MINT_ADDRESS_2, payer);
-  //   }).then(txId => {
-  //     return splt.mintTo(5000000000000000000n, MINT_ADDRESS_2, ACCOUNT_ADDRESS_2, payer);
-  //   }).then(txId => {
-  //     return done();
-  //   }).catch(er => {
-  //     return done(er);
-  //   });
-  // });
+  it('Mint 2', function (done) {
+    const mint = createAccount();
+    const account = createAccount();
+    MINT_ADDRESS_2 = mint.publicKey.toBase58();
+    ACCOUNT_ADDRESS_2 = account.publicKey.toBase58();
+    const splt = new SPLT();
+    splt.initializeMint(9, null, mint, payer).then(txId => {
+      return splt.initializeAccount(account, MINT_ADDRESS_2, payer);
+    }).then(txId => {
+      return splt.mintTo(5000000000000000000n, MINT_ADDRESS_2, ACCOUNT_ADDRESS_2, payer);
+    }).then(txId => {
+      return done();
+    }).catch(er => {
+      return done(er);
+    });
+  });
 
   it('Pool', function (done) {
-    const splt = new SPLT();
     const swap = new Swap();
-    const lpt = createAccount();
     const mintLPT = createAccount();
     const vault = createAccount();
     const treasuryS = createAccount();
     const treasuryA = createAccount();
     const treasuryB = createAccount();
-    LPT_ADDRESS_0 = lpt.publicKey.toBase58();
     MINT_LPT_ADDRESS_0 = mintLPT.publicKey.toBase58();
     VAULT_ADDRESS_0 = vault.publicKey.toBase58();
     TREASURY_S_ADDRESS_0 = treasuryS.publicKey.toBase58();
     TREASURY_A_ADDRESS_0 = treasuryA.publicKey.toBase58();
     TREASURY_B_ADDRESS_0 = treasuryB.publicKey.toBase58();
 
-    return payer.getAccount().then(address => {
+    payer.getAccount().then(payerAddress => {
       return deriveAssociatedAddress(
-        address,
+        payerAddress,
         MINT_LPT_ADDRESS_0,
-        splt.spltProgramId.toBase58(),
-        splt.splataProgramId.toBase58(),
+        swap.spltProgramId.toBase58(),
+        swap.splataProgramId.toBase58(),
       );
-    }).then(lptAddress=>{
-      console.log(lptAddress)
-    }).catch(er => {
-      console.error(er);
-    })
-
-    createStrictAccount(swap.swapProgramId).then(pool => {
+    }).then(lptAddress => {
+      LPT_ADDRESS_0 = lptAddress;
+      return createStrictAccount(swap.swapProgramId);
+    }).then(pool => {
       POOL_ADDRESS_0 = pool.publicKey.toBase58();
       return swap.initializePool(
         1000000000000n, 5000000000000n, 200000000000n,
-        pool, lpt,
+        pool, LPT_ADDRESS_0, mintLPT, vault,
         ACCOUNT_ADDRESS_0, MINT_ADDRESS_0, treasuryS,
         ACCOUNT_ADDRESS_1, MINT_ADDRESS_1, treasuryA,
         ACCOUNT_ADDRESS_2, MINT_ADDRESS_2, treasuryB,
-        vault,
         payer
       );
     }).then(txId => {
+      console.log(txId);
       return done();
     }).catch(er => {
       return done(er);

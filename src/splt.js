@@ -34,7 +34,8 @@ class SPLT extends Tx {
   ) {
     super(nodeUrl);
 
-    if (!account.isAddress(spltProgramAddress)) throw new Error('Invalid SPL-Token program address');
+    if (!account.isAddress(spltProgramAddress)) throw new Error('Invalid SPL token program address');
+    if (!account.isAddress(splataProgramAddress)) throw new Error('Invalid SPL associated token program address');
     this.spltProgramId = account.fromAddress(spltProgramAddress);
     this.splataProgramId = account.fromAddress(splataProgramAddress);
   }

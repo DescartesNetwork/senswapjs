@@ -1,6 +1,6 @@
 const {
   PublicKey, Transaction, SYSVAR_RENT_PUBKEY,
-  TransactionInstruction,
+  TransactionInstruction, SystemProgram,
 } = require('@solana/web3.js');
 const soproxABI = require('soprox-abi');
 
@@ -10,20 +10,24 @@ const schema = require('./schema');
 
 const DEFAULT_SWAP_PROGRAM_ADDRESS = 'D8UuF1jPr5gtxHvnVz3HpxP2UkgtxLs9vwz7ecaTkrGy';
 const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+const DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 
 
 class Swap extends Tx {
   constructor(
     swapProgramAddress = DEFAULT_SWAP_PROGRAM_ADDRESS,
     spltProgramAddress = DEFAULT_SPLT_PROGRAM_ADDRESS,
+    splataProgramAddress = DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS,
     nodeUrl
   ) {
     super(nodeUrl);
 
     if (!account.isAddress(swapProgramAddress)) throw new Error('Invalid swap program address');
     if (!account.isAddress(spltProgramAddress)) throw new Error('Invalid SPL token program address');
+    if (!account.isAddress(splataProgramAddress)) throw new Error('Invalid SPL associated token program address');
     this.swapProgramId = account.fromAddress(swapProgramAddress);
     this.spltProgramId = account.fromAddress(spltProgramAddress);
+    this.splataProgramId = account.fromAddress(splataProgramAddress);
   }
 
   watchAndFetch = (callback) => {
@@ -155,13 +159,14 @@ class Swap extends Tx {
 
   initializePool = (
     reserveS, reserveA, reserveB,
-    pool, lpt, mintLPT, vault,
+    pool, lptAddress, mintLPT, vault,
     srcSAddress, mintSAddress, treasuryS,
     srcAAddress, mintAAddress, treasuryA,
     srcBAddress, mintBAddress, treasuryB,
     wallet
   ) => {
     return new Promise((resolve, reject) => {
+      if (!account.isAddress(lptAddress)) return reject('Invalid lpt address');
       if (!account.isAddress(srcSAddress)) return reject('Invalid source address');
       if (!account.isAddress(mintSAddress)) return reject('Invalid mint address');
       if (!account.isAddress(srcAAddress)) return reject('Invalid source address');
@@ -171,6 +176,7 @@ class Swap extends Tx {
 
       let transaction = new Transaction();
       let treasurerPublicKey = null;
+      const lptPublicKey = account.fromAddress(lptAddress);
       const srcSPublicKey = account.fromAddress(srcSAddress);
       const mintSPublicKey = account.fromAddress(mintSAddress);
       const srcAPublicKey = account.fromAddress(srcAAddress);
@@ -180,10 +186,10 @@ class Swap extends Tx {
 
       const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
       const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
-      const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
+      const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
 
       return this._rentAccount(wallet, pool, poolSpace, this.swapProgramId).then(txId => {
-        return this._rentAccount(wallet, mintLPT, lptSpace, this.swapProgramId);
+        return this._rentAccount(wallet, mintLPT, mintSpace, this.spltProgramId);
       }).then(txId => {
         return this._rentAccount(wallet, vault, accountSpace, this.spltProgramId);
       }).then(txId => {
@@ -216,9 +222,9 @@ class Swap extends Tx {
         });
         const instruction = new TransactionInstruction({
           keys: [
-            { pubkey: payerPublicKey, isSigner: true, isWritable: false },
+            { pubkey: payerPublicKey, isSigner: true, isWritable: true },
             { pubkey: pool.publicKey, isSigner: true, isWritable: true },
-            { pubkey: lpt.publicKey, isSigner: false, isWritable: true },
+            { pubkey: lptPublicKey, isSigner: false, isWritable: true },
             { pubkey: mintLPT.publicKey, isSigner: true, isWritable: true },
             { pubkey: vault.publicKey, isSigner: true, isWritable: true },
 
@@ -235,8 +241,10 @@ class Swap extends Tx {
             { pubkey: treasuryB.publicKey, isSigner: true, isWritable: true },
 
             { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
             { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
+            { pubkey: this.splataProgramId, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()
@@ -273,19 +281,16 @@ class Swap extends Tx {
     });
   }
 
-  initializeLPT = (lpt, poolAddress, mintLPTAddress, wallet) => {
+  initializeLPT = (lptAddress, mintLPTAddress, wallet) => {
     return new Promise((resolve, reject) => {
-      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
+      if (!account.isAddress(lptAddress)) return reject('Invalid lpt address');
       if (!account.isAddress(mintLPTAddress)) return reject('Invalid mint LPT address');
 
       let transaction = new Transaction();
-      const poolPublicKey = account.fromAddress(poolAddress);
+      const lptPublicKey = account.fromAddress(lptAddress);
       const mintLPTPublicKey = account.fromAddress(mintLPTAddress);
-      const lptSpace = (new soproxABI.struct(schema.LPT_SCHEMA)).space;
 
-      return this._rentAccount(wallet, lpt, lptSpace, this.swapProgramId).then(txId => {
-        return this._addRecentCommitment(transaction);
-      }).then(txWithCommitment => {
+      return this._addRecentCommitment(transaction).then(txWithCommitment => {
         transaction = txWithCommitment;
         return wallet.getAccount();
       }).then(payerAddress => {
@@ -293,12 +298,13 @@ class Swap extends Tx {
         const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 1 });
         const instruction = new TransactionInstruction({
           keys: [
-            { pubkey: payerPublicKey, isSigner: true, isWritable: false },
-            { pubkey: poolPublicKey, isSigner: false, isWritable: false },
-            { pubkey: lpt.publicKey, isSigner: false, isWritable: true },
+            { pubkey: payerPublicKey, isSigner: true, isWritable: true },
+            { pubkey: lptPublicKey, isSigner: false, isWritable: true },
             { pubkey: mintLPTPublicKey, isSigner: false, isWritable: false },
+            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
             { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
+            { pubkey: this.splataProgramId, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()

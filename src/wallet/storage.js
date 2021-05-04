@@ -1,5 +1,5 @@
 const KEY = 'senswap';
-const db = window.localStorage;
+const db = typeof window == 'undefined' ? {} : window.localStorage;
 
 const storage = {}
 
