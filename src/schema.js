@@ -18,6 +18,8 @@ schema.POOL_STATE = {
 schema.POOL_SCHEMA = [
   { key: 'owner', type: 'pub' },
   { key: 'state', type: 'u8' },
+  { key: 'vault', type: 'pub' },
+  { key: 'mint_lpt', type: 'pub' },
 
   { key: 'mint_s', type: 'pub' },
   { key: 'treasury_s', type: 'pub' },
@@ -30,15 +32,6 @@ schema.POOL_SCHEMA = [
   { key: 'mint_b', type: 'pub' },
   { key: 'treasury_b', type: 'pub' },
   { key: 'reserve_b', type: 'u64' },
-
-  { key: 'vault', type: 'pub' },
-];
-
-schema.LPT_SCHEMA = [
-  { key: 'owner', type: 'pub' },
-  { key: 'pool', type: 'pub' },
-  { key: 'lpt', type: 'u64' },
-  { key: 'is_initialized', type: 'bool' }
 ];
 
 /**
