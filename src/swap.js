@@ -1,14 +1,12 @@
-const {
-  PublicKey, Transaction, SYSVAR_RENT_PUBKEY,
-  TransactionInstruction, SystemProgram,
-} = require('@solana/web3.js');
+const { PublicKey, Transaction, SYSVAR_RENT_PUBKEY, TransactionInstruction } = require('@solana/web3.js');
 const soproxABI = require('soprox-abi');
 
 const Tx = require('./core/tx');
+const { SPLT } = require('./splt');
 const account = require('./account');
 const schema = require('./schema');
 
-const DEFAULT_SWAP_PROGRAM_ADDRESS = 'D8UuF1jPr5gtxHvnVz3HpxP2UkgtxLs9vwz7ecaTkrGy';
+const DEFAULT_SWAP_PROGRAM_ADDRESS = 'CLnMbkg7DpZCyL8mgfz2DBixAAkaVDkh52eJfB41asuw';
 const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 const DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
 
@@ -28,6 +26,8 @@ class Swap extends Tx {
     this.swapProgramId = account.fromAddress(swapProgramAddress);
     this.spltProgramId = account.fromAddress(spltProgramAddress);
     this.splataProgramId = account.fromAddress(splataProgramAddress);
+
+    this._splt = new SPLT(spltProgramAddress, splataProgramAddress, nodeUrl);
   }
 
   watchAndFetch = (callback) => {
@@ -55,48 +55,6 @@ class Swap extends Tx {
     });
   }
 
-  _getMintData = (mintAddress) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
-      const mintPublicKey = account.fromAddress(mintAddress);
-
-      let result = { address: mintAddress }
-      return this.connection.getAccountInfo(mintPublicKey).then(re => {
-        if (!re) return reject('Uninitialized mint');
-        const { data: mintData } = re;
-        if (!mintData) return reject(`Cannot read data of ${result.address}`);
-        const mintLayout = new soproxABI.struct(schema.MINT_SCHEMA);
-        if (mintData.length !== mintLayout.space) return reject('Unmatched buffer length');
-        mintLayout.fromBuffer(mintData);
-        result = { ...result, ...mintLayout.value };
-        return resolve(result);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
-  }
-
-  _getAccountData = (accountAddress) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(accountAddress)) return reject('Invalid account address');
-      const accountPublicKey = account.fromAddress(accountAddress);
-
-      let result = { address: accountAddress }
-      return this.connection.getAccountInfo(accountPublicKey).then(re => {
-        if (!re) return reject('Uninitialized mint');
-        const { data: accountData } = re;
-        if (!accountData) return reject(`Cannot read data of ${result.address}`);
-        const accountLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
-        if (accountData.length !== accountLayout.space) return reject('Unmatched buffer length');
-        accountLayout.fromBuffer(accountData);
-        result = { ...result, ...accountLayout.value };
-        return resolve(result);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
-  }
-
   getPoolData = (poolAddress) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
@@ -114,8 +72,8 @@ class Swap extends Tx {
 
         result = {
           ...result, ...poolLayout.value,
-          vault: { address: poolLayout.value.vault },
           mint_lpt: { address: poolLayout.value.mint_lpt },
+          vault: { address: poolLayout.value.vault },
           mint_s: { address: poolLayout.value.mint_s },
           treasury_s: { address: poolLayout.value.treasury_s },
           mint_a: { address: poolLayout.value.mint_a },
@@ -124,28 +82,28 @@ class Swap extends Tx {
           treasury_b: { address: poolLayout.value.treasury_b },
         }
 
-        return this._getMintData(result.mint_lpt.address);
+        return this._splt.getMintData(result.mint_lpt.address);
       }).then(mintData => {
         result.mint_lpt = { ...result.mint_lpt, ...mintData };
-        return this._getAccountData(result.vault.address);
+        return this._splt.getAccountData(result.vault.address);
       }).then(vaultData => {
         result.vault = { ...result.vault, ...vaultData };
-        return this._getMintData(result.mint_s.address);
+        return this._splt.getMintData(result.mint_s.address);
       }).then(mintData => {
         result.mint_s = { ...result.mint_s, ...mintData };
-        return this._getAccountData(result.treasury_s.address);
+        return this._splt.getAccountData(result.treasury_s.address);
       }).then(treasuryData => {
         result.treasury_s = { ...result.treasury_s, ...treasuryData };
-        return this._getMintData(result.mint_a.address);
+        return this._splt.getMintData(result.mint_a.address);
       }).then(mintData => {
         result.mint_a = { ...result.mint_a, ...mintData };
-        return this._getAccountData(result.treasury_a.address);
+        return this._splt.getAccountData(result.treasury_a.address);
       }).then(treasuryData => {
         result.treasury_a = { ...result.treasury_a, ...treasuryData };
-        return this._getMintData(result.mint_b.address);
+        return this._splt.getMintData(result.mint_b.address);
       }).then(mintData => {
         result.mint_b = { ...result.mint_b, ...mintData };
-        return this._getAccountData(result.treasury_b.address);
+        return this._splt.getAccountData(result.treasury_b.address);
       }).then(treasuryData => {
         result.treasury_b = { ...result.treasury_b, ...treasuryData };
         return resolve(result);
@@ -155,7 +113,9 @@ class Swap extends Tx {
     });
   }
 
-  getLPTData = this._getAccountData
+  getLPTData = (lptAddress) => {
+    return this._splt.getAccountData(lptAddress);
+  }
 
   initializePool = (
     reserveS, reserveA, reserveB,
@@ -175,7 +135,6 @@ class Swap extends Tx {
       if (!account.isAddress(mintBAddress)) return reject('Invalid mint address');
 
       let transaction = new Transaction();
-      let treasurerPublicKey = null;
       const lptPublicKey = account.fromAddress(lptAddress);
       const srcSPublicKey = account.fromAddress(srcSAddress);
       const mintSPublicKey = account.fromAddress(mintSAddress);
@@ -183,13 +142,21 @@ class Swap extends Tx {
       const mintAPublicKey = account.fromAddress(mintAAddress);
       const srcBPublicKey = account.fromAddress(srcBAddress);
       const mintBPublicKey = account.fromAddress(mintBAddress);
+      let treasurerPublicKey = null;
 
       const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
       const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
-      const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
 
-      return this._rentAccount(wallet, pool, poolSpace, this.swapProgramId).then(txId => {
-        return this._rentAccount(wallet, mintLPT, mintSpace, this.spltProgramId);
+      const seed = [pool.publicKey.toBuffer()];
+      return PublicKey.createProgramAddress(seed, this.swapProgramId).then(publicKeyFromSeed => {
+        treasurerPublicKey = publicKeyFromSeed;
+        const treasurerAddress = treasurerPublicKey.toBase58();
+        return this._splt.initializeMint(9, treasurerAddress, null, mintLPT, wallet);
+      }).then(txId => {
+        const mintLPTAddress = mintLPT.publicKey.toBase58();
+        return this._splt.initializeAccount(lptAddress, mintLPTAddress, wallet);
+      }).then(txId => {
+        return this._rentAccount(wallet, pool, poolSpace, this.swapProgramId)
       }).then(txId => {
         return this._rentAccount(wallet, vault, accountSpace, this.spltProgramId);
       }).then(txId => {
@@ -241,10 +208,8 @@ class Swap extends Tx {
             { pubkey: treasuryB.publicKey, isSigner: true, isWritable: true },
 
             { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
-            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
             { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
-            { pubkey: this.splataProgramId, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()
@@ -281,46 +246,8 @@ class Swap extends Tx {
     });
   }
 
-  initializeLPT = (lptAddress, mintLPTAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(lptAddress)) return reject('Invalid lpt address');
-      if (!account.isAddress(mintLPTAddress)) return reject('Invalid mint LPT address');
-
-      let transaction = new Transaction();
-      const lptPublicKey = account.fromAddress(lptAddress);
-      const mintLPTPublicKey = account.fromAddress(mintLPTAddress);
-
-      return this._addRecentCommitment(transaction).then(txWithCommitment => {
-        transaction = txWithCommitment;
-        return wallet.getAccount();
-      }).then(payerAddress => {
-        const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 1 });
-        const instruction = new TransactionInstruction({
-          keys: [
-            { pubkey: payerPublicKey, isSigner: true, isWritable: true },
-            { pubkey: lptPublicKey, isSigner: false, isWritable: true },
-            { pubkey: mintLPTPublicKey, isSigner: false, isWritable: false },
-            { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
-            { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
-            { pubkey: this.splataProgramId, isSigner: false, isWritable: false },
-          ],
-          programId: this.swapProgramId,
-          data: layout.toBuffer()
-        });
-        transaction.add(instruction);
-        transaction.feePayer = payerPublicKey;
-        return wallet.sign(transaction);
-      }).then(payerSig => {
-        this._addSignature(transaction, payerSig);
-        return this._sendTransaction(transaction);
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  initializeLPT = (lptAccountOrAddress, mintLPTAddress, wallet) => {
+    return this._splt.initializeAccount(lptAccountOrAddress, mintLPTAddress, wallet);
   }
 
   addLiquidity = (
@@ -356,7 +283,7 @@ class Swap extends Tx {
 
       return this._addRecentCommitment(transaction).then(txWithCommitment => {
         transaction = txWithCommitment;
-        const seed = [pool.publicKey.toBuffer()];
+        const seed = [poolPublicKey.toBuffer()];
         return PublicKey.createProgramAddress(seed, this.swapProgramId);
       }).then(publicKeyFromSeed => {
         treasurerPublicKey = publicKeyFromSeed;
@@ -369,7 +296,7 @@ class Swap extends Tx {
           { key: 'delta_a', type: 'u64' },
           { key: 'delta_b', type: 'u64' }
         ], {
-          code: 2,
+          code: 1,
           delta_s: deltaS,
           delta_a: deltaA,
           delta_b: deltaB
@@ -452,7 +379,7 @@ class Swap extends Tx {
         const payerPublicKey = account.fromAddress(payerAddress);
         const layout = new soproxABI.struct(
           [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u64' }],
-          { code: 3, lpt }
+          { code: 2, lpt }
         );
         const instruction = new TransactionInstruction({
           keys: [
@@ -524,7 +451,7 @@ class Swap extends Tx {
         const payerPublicKey = account.fromAddress(payerAddress);
         const layout = new soproxABI.struct(
           [{ key: 'code', type: 'u8' }, { key: 'amount', type: 'u64' }],
-          { code: 4, amount }
+          { code: 3, amount }
         );
         const instruction = new TransactionInstruction({
           keys: [
@@ -557,45 +484,7 @@ class Swap extends Tx {
   }
 
   transfer = (lpt, srcLPTAddress, dstLPTAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(srcLPTAddress)) return reject('Invalid source LPT address');
-      if (!account.isAddress(dstLPTAddress)) return reject('Invalid destination LPT address');
-
-      let transaction = new Transaction();
-      const srcLPTPublicKey = account.fromAddress(srcLPTAddress);
-      const dstLPTPublicKey = account.fromAddress(dstLPTAddress);
-
-      return this._addRecentCommitment(transaction).then(txWithCommitment => {
-        transaction = txWithCommitment;
-        return wallet.getAccount();
-      }).then(payerAddress => {
-        const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct(
-          [{ key: 'code', type: 'u8' }, { key: 'lpt', type: 'u64' }],
-          { code: 5, lpt }
-        );
-        const instruction = new TransactionInstruction({
-          keys: [
-            { pubkey: payerPublicKey, isSigner: true, isWritable: false },
-            { pubkey: srcLPTPublicKey, isSigner: false, isWritable: true },
-            { pubkey: dstLPTPublicKey, isSigner: false, isWritable: true },
-            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
-          ],
-          programId: this.swapProgramId,
-          data: layout.toBuffer()
-        });
-        transaction.add(instruction);
-        transaction.feePayer = payerPublicKey;
-        return wallet.sign(transaction);
-      }).then(payerSig => {
-        this._addSignature(transaction, payerSig);
-        return this._sendTransaction(transaction);
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+    return this._splt.transfer(lpt, srcLPTAddress, dstLPTAddress, wallet);
   }
 
   freezePool = (poolAddress, wallet) => {
@@ -610,7 +499,7 @@ class Swap extends Tx {
         return wallet.getAccount();
       }).then(payerAddress => {
         const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 6 });
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 4 });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
@@ -645,7 +534,7 @@ class Swap extends Tx {
         return wallet.getAccount();
       }).then(payerAddress => {
         const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 7 });
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 5 });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
@@ -691,7 +580,7 @@ class Swap extends Tx {
         const payerPublicKey = account.fromAddress(payerAddress);
         const layout = new soproxABI.struct(
           [{ key: 'code', type: 'u8' }, { key: 'amount', type: 'u64' }],
-          { code: 8, amount });
+          { code: 6, amount });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
@@ -718,43 +607,8 @@ class Swap extends Tx {
     });
   }
 
-  closeLPT = (lptAddress, dstAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(lptAddress)) return reject('Invalid LPT address');
-      if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
-
-      let transaction = new Transaction();
-      const lptPublicKey = account.fromAddress(lptAddress);
-      const dstPublicKey = account.fromAddress(dstAddress);
-
-      return this._addRecentCommitment(transaction).then(txWithCommitment => {
-        transaction = txWithCommitment;
-        return wallet.getAccount();
-      }).then(payerAddress => {
-        const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 9 });
-        const instruction = new TransactionInstruction({
-          keys: [
-            { pubkey: payerPublicKey, isSigner: true, isWritable: false },
-            { pubkey: lptPublicKey, isSigner: false, isWritable: true },
-            { pubkey: dstPublicKey, isSigner: false, isWritable: true },
-            { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
-          ],
-          programId: this.swapProgramId,
-          data: layout.toBuffer()
-        });
-        transaction.add(instruction);
-        transaction.feePayer = payerPublicKey;
-        return wallet.sign(transaction);
-      }).then(payerSig => {
-        this._addSignature(transaction, payerSig);
-        return this._sendTransaction(transaction);
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  closeLPT = (lptAddress, wallet) => {
+    return this._splt.closeAccount(lptAddress, wallet);
   }
 
   transferPoolOwnership = (poolAddress, newOwnerAddress, wallet) => {
@@ -770,7 +624,7 @@ class Swap extends Tx {
         return wallet.getAccount();
       }).then(payerAddress => {
         const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 10 });
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 7 });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },

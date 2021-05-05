@@ -134,9 +134,10 @@ class SPLT extends Tx {
     });
   }
 
-  initializeMint = (decimals, freezeAuthorityAddress, mint, wallet) => {
+  initializeMint = (decimals, mintAuthorityAddress, freezeAuthorityAddress, mint, wallet) => {
     return new Promise((resolve, reject) => {
       freezeAuthorityAddress = freezeAuthorityAddress || '11111111111111111111111111111111';
+      if (!account.isAddress(mintAuthorityAddress)) return reject('Invalid mint authority address');
       if (!account.isAddress(freezeAuthorityAddress)) return reject('Invalid freeze authority address');
 
       let transaction = new Transaction();
@@ -158,7 +159,7 @@ class SPLT extends Tx {
         ], {
           code: 0,
           decimals,
-          mint_authority: payerPublicKey.toBase58(),
+          mint_authority: mintAuthorityAddress,
           freeze_authority_option: freezeAuthorityAddress === '11111111111111111111111111111111' ? 0 : 1,
           freeze_authority: freezeAuthorityAddress,
         });

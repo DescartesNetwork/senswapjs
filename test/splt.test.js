@@ -21,7 +21,9 @@ describe('SPLT library', function () {
     SRC_ADDRESS = src.publicKey.toBase58();
     DST_ADDRESS = dst.publicKey.toBase58();
     const splt = new SPLT();
-    splt.initializeMint(9, null, mint, payer).then(txId => {
+    payer.getAccount().then(payerAddress => {
+      return splt.initializeMint(9, payerAddress, null, mint, payer);
+    }).then(txId => {
       return splt.initializeAccount(src, MINT_ADDRESS, payer);
     }).then(txId => {
       return splt.mintTo(5000000000000000000n, MINT_ADDRESS, SRC_ADDRESS, payer);
@@ -87,7 +89,9 @@ describe('SPLT library', function () {
       const splt = new SPLT();
       const mint = createAccount();
       const freezeAuthorityAddress = null; // Unset freeze authority
-      splt.initializeMint(9, freezeAuthorityAddress, mint, payer).then(txId => {
+      payer.getAccount().then(payerAddress => {
+        return splt.initializeMint(9, payerAddress, freezeAuthorityAddress, mint, payer);
+      }).then(txId => {
         return splt.getMintData(mint.publicKey.toBase58());
       }).then(data => {
         return done();
@@ -137,8 +141,8 @@ describe('SPLT library', function () {
       const mint = createAccount();
       const authorityType = AuthorityType.FreezeAccount;
       const mintAddress = mint.publicKey.toBase58();
-      payer.getAccount().then(freezeAuthorityAddress => {
-        return splt.initializeMint(9, freezeAuthorityAddress, mint, payer);
+      payer.getAccount().then(payerAddress => {
+        return splt.initializeMint(9, payerAddress, payerAddress, mint, payer);
       }).then(txId => {
         return delegate.getAccount();
       }).then(newFreezeAuthorityAddress => {
@@ -289,8 +293,8 @@ describe('SPLT library', function () {
       const mint = createAccount();
       const accountAddress = newAccount.publicKey.toBase58();
       const mintAddress = mint.publicKey.toBase58();
-      payer.getAccount().then(freezeAuthorityAddress => {
-        return splt.initializeMint(9, freezeAuthorityAddress, mint, payer);
+      payer.getAccount().then(payerAddress => {
+        return splt.initializeMint(9, payerAddress, payerAddress, mint, payer);
       }).then(txId => {
         return splt.initializeAccount(newAccount, mintAddress, payer);
       }).then(txId => {
