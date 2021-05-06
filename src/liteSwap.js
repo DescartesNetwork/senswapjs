@@ -1,5 +1,5 @@
 const Swap = require('./swap');
-const { createAccount, deriveAssociatedAddress } = require('./account');
+const { createAccount, createStrictAccount, deriveAssociatedAddress } = require('./account');
 const {
   DEFAULT_SWAP_PROGRAM_ADDRESS,
   DEFAULT_SPLT_PROGRAM_ADDRESS,
