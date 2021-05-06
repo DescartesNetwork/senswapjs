@@ -1,4 +1,4 @@
-const Swap = require('./splt');
+const Swap = require('./swap');
 const {
   DEFAULT_SWAP_PROGRAM_ADDRESS,
   DEFAULT_SPLT_PROGRAM_ADDRESS,
