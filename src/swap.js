@@ -5,11 +5,11 @@ const Tx = require('./core/tx');
 const { SPLT } = require('./splt');
 const account = require('./account');
 const schema = require('./schema');
-
-const DEFAULT_SWAP_PROGRAM_ADDRESS = 'CLnMbkg7DpZCyL8mgfz2DBixAAkaVDkh52eJfB41asuw';
-const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
-const DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
-
+const {
+  DEFAULT_SWAP_PROGRAM_ADDRESS,
+  DEFAULT_SPLT_PROGRAM_ADDRESS,
+  DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS
+} = require('./default');
 
 class Swap extends Tx {
   constructor(
@@ -133,6 +133,8 @@ class Swap extends Tx {
       if (!account.isAddress(mintAAddress)) return reject('Invalid mint address');
       if (!account.isAddress(srcBAddress)) return reject('Invalid source address');
       if (!account.isAddress(mintBAddress)) return reject('Invalid mint address');
+      if (mintSAddress === mintAAddress) return reject('There are same mint addresses');
+      if (mintSAddress === mintBAddress) return reject('There are same mint addresses');
 
       let transaction = new Transaction();
       const lptPublicKey = account.fromAddress(lptAddress);

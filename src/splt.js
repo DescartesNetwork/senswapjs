@@ -7,9 +7,10 @@ const soproxABI = require('soprox-abi');
 const Tx = require('./core/tx');
 const account = require('./account');
 const schema = require('./schema');
-
-const DEFAULT_SPLT_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
-const DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL';
+const {
+  DEFAULT_SPLT_PROGRAM_ADDRESS,
+  DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS
+} = require('./default');
 
 const AuthorityType = {
   get MintTokens() {

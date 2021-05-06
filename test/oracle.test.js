@@ -1,91 +1,108 @@
+const BN = require('bn.js');
 const {
-  _curve, curve, _inverseCurve, inverseCurve,
-  slippage, ratio,
+  _curve, curve, _inverseCurve, inverseCurve, slippage,
+  __rake, _rake, rake,
 } = require('../dist');
 
-const newBidReserve = 1000001000000000n;
-const newAskReserve = 299998000007666658n;
-const bidReserve = '1000000000000000';
-const bidLPT = '2000000000000000000';
-const askReserve = '300000000000000000';
-const askLPT = '300000000000000000';
+const fee = 2500000n;
+const feeDecimals = 1000000000n;
+
+const bidAmount = 1000000000n;
+const bidReserve = 1000000000000000n;
+const askAmount = 1000000000000n;
+const askReserve = 300000000000000000n;
+
+const deltaS = 1000000000n;
+const deltaA = 2000000000n;
+const deltaB = 3000000000n;
+const reserseS = 100000000000n;
+const reserseA = 5000000000000n;
+const reserseB = 200000000000n;
 
 describe('Oracle library', function () {
 
-  describe('Curve', function () {
-    it('Should compute alpha', function (done) {
-      const a = _curve.alpha(2, 1).toString();
-      if (a !== '500000000000000000000000000000000000') return done('Wrong alpha');
+  describe('Curve & Inverse Curve', function () {
+    it('Should compute curve', function (done) {
+      const amount = _curve(
+        new BN(bidAmount.toString()),
+        new BN(bidReserve.toString()),
+        new BN(askReserve.toString())
+      );
+      if (amount.toString() !== '299999700001') return done('Wrong _curve');
       return done();
     });
 
-    it('Should compute inverse alpha', function (done) {
-      const ra = _curve.inverseAlpha(2, 1).toString();
-      if (ra !== '2000000000000000000000000000000000000') return done('Wrong inverse alpha');
-      return done();
-    });
-
-    it('Should compute lambda', function (done) {
-      const l = _curve.lambda(2, 1).toString();
-      if (l !== '500000000000000000') return done('Wrong lambda');
-      return done();
-    });
-
-    it('Should compute beta', function (done) {
-      const b = _curve.beta(2, 1, 2, 1);
-      if (b.toString() !== '302775637731994646') return done('Wrong beta');
+    it('Should compute inverse curve', function (done) {
+      const amount = _inverseCurve(
+        new BN(askAmount.toString()),
+        new BN(bidReserve.toString()),
+        new BN(askReserve.toString())
+      );
+      if (amount.toString() !== '3333344444') return done('Wrong _inverseCurve');
       return done();
     });
   });
 
-  describe('Inverse curve', function () {
-    it('Should compute beta', function (done) {
-      const b = _inverseCurve.beta(2, 1).toString();
-      if (b !== '2000000000000000000000000000000000000') return done('Wrong beta');
+  describe('Single Rake && Multiple Rake', function () {
+    it('Should compute __rake', function (done) {
+      const [lpt, a, b] = __rake(
+        new BN(deltaS.toString()),
+        new BN(reserseS.toString()),
+        new BN(reserseA.toString()),
+        new BN(reserseB.toString()),
+      );
+      if (lpt.toString() !== '334439583') return done('Wrong __rake');
+      if (a.toString() !== '16556411410') return done('Wrong __rake');
+      if (b.toString() !== '662256457') return done('Wrong __rake');
       return done();
     });
 
-    it('Should compute inverse beta', function (done) {
-      const rb = _inverseCurve.inverseBeta(2, 1).toString();
-      if (rb !== '500000000000000000000000000000000000') return done('Wrong inverse beta');
-      return done();
-    });
-
-    it('Should compute inverse lambda', function (done) {
-      const rl = _inverseCurve.inverseLambda(2, 1).toString();
-      if (rl !== '2000000000000000000') return done('Wrong inverse lambda');
-      return done();
-    });
-
-    it('Should compute alpha', function (done) {
-      const a = _inverseCurve.alpha(2, 1, 2, 1);
-      if (a.toString() !== '1443000468164691395') return done('Wrong alpha');
+    it('Should compute _rake', function (done) {
+      const [lpt, rs, ra, rb] = _rake(
+        new BN(deltaS.toString()),
+        new BN(deltaA.toString()),
+        new BN(deltaB.toString()),
+        new BN(reserseS.toString()),
+        new BN(reserseA.toString()),
+        new BN(reserseB.toString()),
+      );
+      if (lpt.toString() !== '847910833') return done('Wrong __rake');
+      if (rs.toString() !== '101000000000') return done('Wrong __rake');
+      if (ra.toString() !== '5002000000000') return done('Wrong __rake');
+      if (rb.toString() !== '203000000000') return done('Wrong __rake');
       return done();
     });
   });
 
   describe('Main', function () {
     it('Should compute curve', function (done) {
-      const c = curve(newBidReserve, bidReserve, bidLPT, askReserve, askLPT);
-      if (c !== newAskReserve) return done('Wrong market state');
+      const amount = curve(bidAmount, bidReserve, askReserve, fee, feeDecimals);
+      if (amount !== 299249700750n) return done('Wrong market state');
       return done();
     });
 
     it('Should compute inverse curve', function (done) {
-      const c = inverseCurve(newAskReserve, bidReserve, bidLPT, askReserve, askLPT);
-      if (c !== newBidReserve) return done('Wrong market state');
+      const amount = inverseCurve(askAmount, bidReserve, askReserve, fee, feeDecimals);
+      if (amount !== 3341698690n) return done('Wrong market state');
       return done();
     });
 
     it('Should compute slippage', function (done) {
-      const s = slippage(newBidReserve, bidReserve, bidLPT, askReserve, askLPT);
-      if (s !== 0.9999923333665555) return done('Wrong slippage');
+      const s = slippage(1000000000000n, bidReserve, askReserve, fee, feeDecimals);
+      if (s !== 1800180n) return done('Wrong slippage');
       return done();
     });
 
-    it('Should compute ratio', function (done) {
-      const r = ratio(newBidReserve, bidReserve, bidLPT, askReserve, askLPT);
-      if (r !== 1999.992333341) return done('Wrong ratio');
+    it('Should compute rake', function (done) {
+      const { lpt, newReserveS, newReserveA, newReserveB } = rake(
+        deltaS, deltaA, deltaB,
+        reserseS, reserseA, reserseB,
+        fee, feeDecimals
+      );
+      if (lpt !== 845791056n) return done('Wrong rake');
+      if (newReserveS !== 101002119777n) return done('Wrong rake');
+      if (newReserveA !== 5002000000000n) return done('Wrong rake');
+      if (newReserveB !== 203000000000n) return done('Wrong rake');
       return done();
     });
   });
