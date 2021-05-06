@@ -16,10 +16,18 @@ class LiteSwap {
     this._swap = new Swap(swapProgramAddress, spltProgramAddress, splataProgramAddress, nodeUrl);
   }
 
-  watchAndFetch = this._swap.watchAndFetch
-  watch = this._swap.watch
-  getPoolData = this._swap.getPoolData
-  getLPTData = this._swap.getLPTData
+  watchAndFetch = (callback) => {
+    return this._swap.watchAndFetch(callback);
+  }
+  watch = (callback) => {
+    return this._swap.watch(callback);
+  }
+  getPoolData = (poolAddress) => {
+    return this._swap.getPoolData(poolAddress);
+  }
+  getLPTData = (lptAddress) => {
+    return this._swap.getLPTData(lptAddress);
+  }
 
   /**
    * Initialize Pool
@@ -63,7 +71,9 @@ class LiteSwap {
   /**
    * Initialize LPT
    */
-  initializeLPT = this._swap.initializeLPT
+  initializeLPT = (lptAccountOrAddress, mintLPTAddress, wallet) => {
+    return this._swap.initializeLPT(lptAccountOrAddress, mintLPTAddress, wallet);
+  }
 
   /**
    * Add Liquidity
@@ -167,17 +177,23 @@ class LiteSwap {
   /**
    * Transfer
    */
-  transfer = this._swap.transfer
+  transfer = (lpt, srcLPTAddress, dstLPTAddress, wallet) => {
+    return this._swap.transfer(lpt, srcLPTAddress, dstLPTAddress, wallet)
+  }
 
   /**
    * Freeze pool
    */
-  freezePool = this._swap.freezePool
+  freezePool = (poolAddress, wallet) => {
+    return this._swap.freezePool(poolAddress, wallet);
+  }
 
   /**
    * Thaw pool
    */
-  thawPool = this._swap.thawPool
+  thawPool = (poolAddress, wallet) => {
+    return this._swap.thawPool(poolAddress, wallet);
+  }
 
   /**
    * Earn
@@ -198,12 +214,16 @@ class LiteSwap {
   /**
    * Close LPT
    */
-  closeLPT = this._swap.closeLPT
+  closeLPT = (lptAddress, wallet) => {
+    return this._swap.closeLPT(lptAddress, wallet);
+  }
 
   /**
    * Transfer Ownership
    */
-  transferPoolOwnership = this._swap.transferPoolOwnership
+  transferPoolOwnership = (poolAddress, newOwnerAddress, wallet) => {
+    return this._swap.transferPoolOwnership(poolAddress, newOwnerAddress, wallet);
+  }
 }
 
 module.exports = LiteSwap;
