@@ -158,7 +158,7 @@ class Swap extends Tx {
         const mintLPTAddress = mintLPT.publicKey.toBase58();
         return this._splt.initializeAccount(lptAddress, mintLPTAddress, wallet);
       }).then(txId => {
-        return this._rentAccount(wallet, pool, poolSpace, this.swapProgramId)
+        return this._rentAccount(wallet, pool, poolSpace, this.swapProgramId);
       }).then(txId => {
         return this._rentAccount(wallet, vault, accountSpace, this.spltProgramId);
       }).then(txId => {

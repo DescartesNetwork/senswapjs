@@ -76,7 +76,14 @@ class LiteSwap {
     return new Promise((resolve, reject) => {
       return createStrictAccount(this._swap.swapProgramId).then(strictAccount => {
         pool = strictAccount;
-        return this._getLPTAddress(mintLPTAddress, wallet);
+        return wallet.getAccount();
+      }).then(payerAddress => {
+        return deriveAssociatedAddress(
+          payerAddress,
+          mintLPTAddress,
+          this._swap.spltProgramId.toBase58(),
+          this._swap.splataProgramId.toBase58(),
+        );
       }).then(associatedAccountAddress => {
         lptAddress = associatedAccountAddress;
         return this._swap._splt.getAccountData(srcSAddress)
