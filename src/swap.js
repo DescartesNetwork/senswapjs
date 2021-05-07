@@ -9,7 +9,8 @@ const schema = require('./schema');
 const {
   DEFAULT_SWAP_PROGRAM_ADDRESS,
   DEFAULT_SPLT_PROGRAM_ADDRESS,
-  DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS
+  DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS,
+  DEFAULT_EMPTY_ADDRESSS
 } = require('./default');
 
 class Swap extends Tx {
@@ -127,6 +128,9 @@ class Swap extends Tx {
     wallet
   ) => {
     return new Promise((resolve, reject) => {
+      srcSAddress = srcSAddress || DEFAULT_EMPTY_ADDRESSS;
+      mintAAddress = srcAAddress || DEFAULT_EMPTY_ADDRESSS;
+      srcBAddress = srcBAddress || DEFAULT_EMPTY_ADDRESSS;
       if (!account.isAddress(lptAddress)) return reject('Invalid lpt address');
       if (!account.isAddress(srcSAddress)) return reject('Invalid source address');
       if (!account.isAddress(mintSAddress)) return reject('Invalid mint address');

@@ -9,7 +9,8 @@ const account = require('./account');
 const schema = require('./schema');
 const {
   DEFAULT_SPLT_PROGRAM_ADDRESS,
-  DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS
+  DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS,
+  DEFAULT_EMPTY_ADDRESSS
 } = require('./default');
 
 const AuthorityType = {
@@ -137,7 +138,7 @@ class SPLT extends Tx {
 
   initializeMint = (decimals, mintAuthorityAddress, freezeAuthorityAddress, mint, wallet) => {
     return new Promise((resolve, reject) => {
-      freezeAuthorityAddress = freezeAuthorityAddress || '11111111111111111111111111111111';
+      freezeAuthorityAddress = freezeAuthorityAddress || DEFAULT_EMPTY_ADDRESSS;
       if (!account.isAddress(mintAuthorityAddress)) return reject('Invalid mint authority address');
       if (!account.isAddress(freezeAuthorityAddress)) return reject('Invalid freeze authority address');
 
@@ -161,7 +162,7 @@ class SPLT extends Tx {
           code: 0,
           decimals,
           mint_authority: mintAuthorityAddress,
-          freeze_authority_option: freezeAuthorityAddress === '11111111111111111111111111111111' ? 0 : 1,
+          freeze_authority_option: freezeAuthorityAddress === DEFAULT_EMPTY_ADDRESSS ? 0 : 1,
           freeze_authority: freezeAuthorityAddress,
         });
         const instruction = new TransactionInstruction({
@@ -447,7 +448,7 @@ class SPLT extends Tx {
 
   setAuthority = (authorityType, newAuthorityAddress, targetAddress, wallet) => {
     return new Promise((resolve, reject) => {
-      newAuthorityAddress = newAuthorityAddress || '11111111111111111111111111111111';
+      newAuthorityAddress = newAuthorityAddress || DEFAULT_EMPTY_ADDRESSS;
       if (!account.isAddress(newAuthorityAddress)) return reject('Invalid new authority address');
       if (!account.isAddress(targetAddress)) return reject('Invalid target address');
 
@@ -467,7 +468,7 @@ class SPLT extends Tx {
         ], {
           code: 6,
           authority_type: authorityType,
-          new_authority_option: newAuthorityAddress === '11111111111111111111111111111111' ? 0 : 1,
+          new_authority_option: newAuthorityAddress === DEFAULT_EMPTY_ADDRESSS ? 0 : 1,
           new_authority: newAuthorityAddress,
         });
         const instruction = new TransactionInstruction({
