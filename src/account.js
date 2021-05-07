@@ -27,11 +27,10 @@ account.isMintLPTAddress = (mintAuthorityAddress, freezeAuthorityAddress, swapPr
     const freezeAuthorityPublicKey = account.fromAddress(freezeAuthorityAddress); // Proof of mint LPT
     const swapProgramId = account.fromAddress(swapProgramAddress);
     const poolPublicKey = new PublicKey(xor(freezeAuthorityPublicKey.toBuffer(), mintAuthorityPublicKey.toBuffer()));
-    const poolAddress = poolPublicKey.toBuffer();
-    const seed = [poolAddress];
+    const seed = [poolPublicKey.toBuffer()];
     return PublicKey.createProgramAddress(seed, swapProgramId).then(treasurerPublicKey => {
       if (treasurerPublicKey.toBase58() != mintAuthorityPublicKey.toBase58()) return resolve(null);
-      return resolve(poolAddress);
+      return resolve(poolPublicKey.toBase58());
     }).catch(er => {
       return reject(er);
     });
