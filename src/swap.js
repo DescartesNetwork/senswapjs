@@ -129,7 +129,7 @@ class Swap extends Tx {
   ) => {
     return new Promise((resolve, reject) => {
       srcSAddress = srcSAddress || DEFAULT_EMPTY_ADDRESSS;
-      mintAAddress = srcAAddress || DEFAULT_EMPTY_ADDRESSS;
+      srcAAddress = srcAAddress || DEFAULT_EMPTY_ADDRESSS;
       srcBAddress = srcBAddress || DEFAULT_EMPTY_ADDRESSS;
       if (!account.isAddress(lptAddress)) return reject('Invalid lpt address');
       if (!account.isAddress(srcSAddress)) return reject('Invalid source address');
