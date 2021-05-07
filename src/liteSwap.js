@@ -150,7 +150,7 @@ class LiteSwap {
         data = re;
         const { mint_lpt: { address: mintLPTAddress } } = data;
         return this._getLPTAddress(mintLPTAddress, wallet);
-      }).then(({ lptAddress }) => {
+      }).then(lptAddress => {
         const {
           mint_lpt: { address: mintLPTAddress },
           treasury_s: { address: treasurySAddress },
