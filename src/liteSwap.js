@@ -145,10 +145,12 @@ class LiteSwap {
   addLiquidity = (deltaS, deltaA, deltaB, poolAddress, srcSAddress, srcAAddress, srcBAddress, wallet) => {
     return new Promise((resolve, reject) => {
       let lptAddress = '';
-      return this._getLPTAddress().then(associatedAccountAddress => {
-        lptAddress = associatedAccountAddress;
-        return this._swap.getPoolData(poolAddress);
-      }).then(data => {
+      let data = {}
+      return this._swap.getPoolData(poolAddress).then(re => {
+        data = re;
+        const { mint_lpt: { address: mintLPTAddress } } = data;
+        return this._getLPTAddress(mintLPTAddress, wallet);
+      }).then(({ lptAddress }) => {
         const {
           mint_lpt: { address: mintLPTAddress },
           treasury_s: { address: treasurySAddress },
@@ -163,6 +165,8 @@ class LiteSwap {
           srcBAddress, treasuryBAddress,
           wallet
         );
+      }).then(associatedAccountAddress => {
+        lptAddress = associatedAccountAddress;
       }).then(txId => {
         return resolve({ txId, lptAddress });
       }).catch(er => {
