@@ -4,6 +4,7 @@ const soproxABI = require('soprox-abi');
 const Tx = require('./core/tx');
 const { SPLT } = require('./splt');
 const account = require('./account');
+const { proofOfMintLPT } = require('./crypto');
 const schema = require('./schema');
 const {
   DEFAULT_SWAP_PROGRAM_ADDRESS,
@@ -152,8 +153,10 @@ class Swap extends Tx {
       const seed = [pool.publicKey.toBuffer()];
       return PublicKey.createProgramAddress(seed, this.swapProgramId).then(publicKeyFromSeed => {
         treasurerPublicKey = publicKeyFromSeed;
+        return proofOfMintLPT(pool.publicKey.toBase58(), this.swapProgramId.toBase58());
+      }).then(freezeAuthorityAddress => {
         const treasurerAddress = treasurerPublicKey.toBase58();
-        return this._splt.initializeMint(9, treasurerAddress, null, mintLPT, wallet);
+        return this._splt.initializeMint(9, treasurerAddress, freezeAuthorityAddress, mintLPT, wallet);
       }).then(txId => {
         const mintLPTAddress = mintLPT.publicKey.toBase58();
         return this._splt.initializeAccount(lptAddress, mintLPTAddress, wallet);

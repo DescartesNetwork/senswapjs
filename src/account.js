@@ -2,6 +2,7 @@ const { Account, PublicKey } = require('@solana/web3.js');
 const { doUntil } = require('async');
 const nacl = require('tweetnacl');
 const ssKeystore = require('./keystore');
+const xor = require('buffer-xor');
 
 
 const account = {}
@@ -15,6 +16,25 @@ account.isAddress = (address) => {
   } catch (er) {
     return false;
   }
+}
+
+account.isMintLPTAddress = (mintAuthorityAddress, freezeAuthorityAddress, swapProgramAddress) => {
+  return new Promise((resolve, reject) => {
+    if (!account.isAddress(mintAuthorityAddress)) return reject('Invalid mint authority address');
+    if (!account.isAddress(freezeAuthorityAddress)) return reject('Invalid freeze authority address');
+    if (!account.isAddress(swapProgramAddress)) return reject('Invalid swap program address');
+    const mintAuthorityPublicKey = account.fromAddress(mintAuthorityAddress);
+    const freezeAuthorityPublicKey = account.fromAddress(freezeAuthorityAddress); // Proof of mint LPT
+    const swapProgramId = account.fromAddress(swapProgramAddress);
+    const poolPublicKey = new PublicKey(xor(freezeAuthorityPublicKey.toBuffer(), mintAuthorityPublicKey.toBuffer()));
+    const seed = [poolPublicKey.toBuffer()];
+    return PublicKey.createProgramAddress(seed, swapProgramId).then(treasurerPublicKey => {
+      if (treasurerPublicKey.toBase58() != mintAuthorityPublicKey.toBase58()) return resolve(false);
+      return resolve(true);
+    }).catch(er => {
+      return reject(er);
+    });
+  });
 }
 
 account.createAccount = () => {
