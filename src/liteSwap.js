@@ -269,7 +269,7 @@ class LiteSwap {
    * Transfer
    */
   transfer = (lpt, srcLPTAddress, dstLPTAddress, wallet) => {
-    return this._swap.transfer(lpt, srcLPTAddress, dstLPTAddress, wallet)
+    return this._swap.transfer(lpt, srcLPTAddress, dstLPTAddress, wallet);
   }
 
   /**
