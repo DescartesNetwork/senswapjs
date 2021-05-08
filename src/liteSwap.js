@@ -180,23 +180,18 @@ class LiteSwap {
   removeLiquidity = (lpt, poolAddress, dstSAddress, dstAAddress, dstBAddress, wallet) => {
     return new Promise((resolve, reject) => {
       let lptAddress = '';
-      let mintLPTAddress = '';
-      let treasurySAddress = '';
-      let treasuryAAddress = '';
-      let treasuryBAddress = '';
-      return this._swap.getPoolData(poolAddress).then(data => {
-        const {
-          mint_lpt: { address: _mintLPTAddress },
-          treasury_s: { address: _treasurySAddress },
-          treasury_a: { address: _treasuryAAddress },
-          treasury_b: { address: _treasuryBAddress },
-        } = data;
-        mintLPTAddress = _mintLPTAddress;
-        treasurySAddress = _treasurySAddress;
-        treasuryAAddress = _treasuryAAddress;
-        treasuryBAddress = _treasuryBAddress;
+      let data = {};
+      return this._swap.getPoolData(poolAddress).then(re => {
+        data = re;
+        const { mint_lpt: { address: mintLPTAddress } } = data;
         return this._getLPTAddress(mintLPTAddress, wallet, false);
       }).then(associatedAccountAddress => {
+        const {
+          mint_lpt: { address: mintLPTAddress },
+          treasury_s: { address: treasurySAddress },
+          treasury_a: { address: treasuryAAddress },
+          treasury_b: { address: treasuryBAddress },
+        } = data;
         lptAddress = associatedAccountAddress;
         return this._swap.removeLiquidity(
           lpt,
@@ -247,7 +242,7 @@ class LiteSwap {
         if (address == mintSAddress) treasuryBidAddress = treasurySAddress;
         if (address == mintAAddress) treasuryBidAddress = treasuryAAddress;
         if (address == mintBAddress) treasuryBidAddress = treasuryBAddress;
-        return this._swap._splt.getAccountData(srcAddress);
+        return this._swap._splt.getAccountData(dstAddress);
       }).then(({ mint: { address } }) => {
         if (address == mintSAddress) treasuryAskAddress = treasurySAddress;
         if (address == mintAAddress) treasuryAskAddress = treasuryAAddress;
