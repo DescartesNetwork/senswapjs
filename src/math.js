@@ -5,8 +5,8 @@ const PRECISION = new BN('1000000000');
 const math = {}
 
 math.decimalize = (a, decimals) => {
-  if (!a) return 0;
-  if (decimals <= 0 || decimals % 1 != 0) return 0;
+  if (!a) return 0n;
+  if (decimals <= 0 || decimals % 1 != 0) return 0n;
   const n = a.toString();
   const m = n.split('.');
   if (m.length > 2) throw new Error('Invalid number');
@@ -16,8 +16,8 @@ math.decimalize = (a, decimals) => {
 }
 
 math.undecimalize = (a, decimals) => {
-  if (!a) return 0;
-  if (decimals <= 0 || decimals % 1 != 0) return 0;
+  if (!a) return '0';
+  if (decimals <= 0 || decimals % 1 != 0) return '0';
   const n = a.toString();
 
   let integer = n.length > decimals ? n.substring(0, n.length - decimals) : '0';
