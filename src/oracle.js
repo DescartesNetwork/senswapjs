@@ -49,7 +49,7 @@ oracle._inverseCurve = (askAmount, bidReserve, askReserve) => {
  */
 oracle.__rake = (delta, reserveS, reserveA, reserveB) => {
   if (reserveS.isZero() || reserveA.isZero() || reserveB.isZero()) throw new Error('Invalid reserve');
-  if (delta.isZero()) return [0, 0, 0];
+  if (delta.isZero()) return [new BN(0), new BN(0), new BN(0)];
   const cbrtOfDeltaPlusReserve = delta.add(reserveS).mul(TRIPPLE_PRECISION).cbrt();
   const cbrtOfReserce = reserveS.mul(TRIPPLE_PRECISION).cbrt();
   const z = cbrtOfDeltaPlusReserve.pow(new BN(2)).mul(cbrtOfReserce).div(TRIPPLE_PRECISION).sub(reserveS);
