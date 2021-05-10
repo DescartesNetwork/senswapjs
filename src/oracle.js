@@ -24,7 +24,6 @@ BN.prototype.cbrt = function () {
   }
 }
 
-const PRECISION = new BN('1000000');
 const TRIPPLE_PRECISION = new BN('1000000000000000000');
 
 const oracle = {}
@@ -102,7 +101,7 @@ oracle.slippage = (bidAmount, bidReserve, askReserve, fee, feeDecimals) => {
   const askAmount = oracle.curve(bidAmount, bidReserve, askReserve, fee, feeDecimals);
   const newBidReserve = bidAmount + bidReserve;
   const newAskReserve = askReserve - askAmount;
-  const slippage = (newAskReserve * bidReserve - newBidReserve * askReserve) * feeDecimals / (newBidReserve * askReserve);
+  const slippage = (newBidReserve * askReserve - newAskReserve * bidReserve) * feeDecimals / (newBidReserve * askReserve);
   return slippage;
 }
 
