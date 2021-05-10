@@ -102,8 +102,8 @@ oracle.slippage = (bidAmount, bidReserve, askReserve, fee, feeDecimals) => {
   const askAmount = oracle.curve(bidAmount, bidReserve, askReserve, fee, feeDecimals);
   const newBidReserve = bidAmount + bidReserve;
   const newAskReserve = askReserve - askAmount;
-  const ratio = bidReserve * global.BigInt(PRECISION.toString()) / askReserve;
-  const newRatio = newBidReserve * global.BigInt(PRECISION.toString()) / newAskReserve;
+  const ratio = askReserve * global.BigInt(PRECISION.toString()) / bidReserve;
+  const newRatio = newAskReserve * global.BigInt(PRECISION.toString()) / newBidReserve;
   const slippage = (newRatio - ratio) * feeDecimals / ratio;
   return slippage;
 }

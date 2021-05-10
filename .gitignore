@@ -105,3 +105,6 @@ dist
 
 # NPM
 .npmrc
+
+# Mergetool original files
+*.orig
