@@ -68,7 +68,6 @@ class Coin98Wallet extends WalletInterface {
   _verify = (sig, msg = null) => {
     return new Promise((resolve, reject) => {
       return this._getAccount().then(addr => {
-        if (msg) msg = bs58.encode(Buffer.from(msg, 'utf8'));
         return account.verify(addr, sig, msg);
       }).then(data => {
         if (typeof data === 'string') data = bs58.decode(data).toString('utf8');
