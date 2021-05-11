@@ -54,11 +54,11 @@ class Coin98Wallet extends WalletInterface {
   _certify = (msg) => {
     return new Promise((resolve, reject) => {
       const node = this._getNode();
+      msg = bs58.encode(Buffer.from(msg, 'utf8'));
       return node.request({ method: 'sol_sign', params: [msg] }).then(({ publicKey, signature }) => {
-        console.log(publicKey, signature);
         const address = publicKey;
-        const sig = signature;
-        return resolve(address, sig, msg);
+        const sig = bs58.decode(signature).toString('hex');
+        return resolve({ address, sig, msg });
       }).catch(er => {
         return reject(er);
       });
@@ -68,7 +68,11 @@ class Coin98Wallet extends WalletInterface {
   _verify = (sig, msg = null) => {
     return new Promise((resolve, reject) => {
       const node = this._getNode();
-      return node.request({ method: 'sol_verify', params: [sig, msg] }).then(data => {
+      return node._getAccount(addr => {
+        msg = bs58.encode(Buffer.from(msg, 'utf8'));
+        return account.verify(addr, sig, msg);
+      }).then(data => {
+        if (typeof data === 'string') data = bs58.decode(data).toString('utf8');
         return resolve(data);
       }).catch(er => {
         return reject(er);
