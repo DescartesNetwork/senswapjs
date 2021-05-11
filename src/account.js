@@ -162,6 +162,7 @@ account.verify = (address, sig, msg = null) => {
   const bufSig = Buffer.from(sig, 'hex');
   const bufMsg = nacl.sign.open(bufSig, publicKey);
   const _msg = Buffer.from(bufMsg).toString('utf8');
+  if (!_msg) return false;
   if (!msg) return _msg;
   if (msg && msg === _msg) return true;
   return false;

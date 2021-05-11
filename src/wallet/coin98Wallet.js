@@ -54,7 +54,6 @@ class Coin98Wallet extends WalletInterface {
   _certify = (msg) => {
     return new Promise((resolve, reject) => {
       const node = this._getNode();
-      msg = bs58.encode(Buffer.from(msg, 'utf8'));
       return node.request({ method: 'sol_sign', params: [msg] }).then(({ publicKey, signature }) => {
         const address = publicKey;
         const sig = bs58.decode(signature).toString('hex');
