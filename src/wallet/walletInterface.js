@@ -38,6 +38,27 @@ class WalletInterface {
     });
   }
 
+  certify = (message) => {
+    return new Promise((resolve, reject) => {
+      if (!this._certify) return reject('Wallet is not connected');
+      return this._certify(message).then(re => {
+        return resolve(re);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  verify = (signature, message = null) => {
+    return new Promise((resolve, reject) => {
+      if (!this._verify) return reject('Wallet is not connected');
+      return this._verify(signature, message).then(re => {
+        return resolve(re);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
 }
 
 module.exports = WalletInterface;

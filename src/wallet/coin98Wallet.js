@@ -50,6 +50,30 @@ class Coin98Wallet extends WalletInterface {
       });
     });
   }
+
+  _cetify = (msg) => {
+    return new Promise((resolve, reject) => {
+      const node = this._getNode();
+      return node.request({ method: 'sol_sign', params: [msg] }).then(({ publicKey, signature }) => {
+        const address = publicKey;
+        const sig = bs58.decode(signature).toString('hex');
+        return resolve(address, sig, msg);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  _verify = (sig, msg = null) => {
+    return new Promise((resolve, reject) => {
+      const node = this._getNode();
+      return node.request({ method: 'sol_verify', params: [sig, msg] }).then(data => {
+        return resolve(data);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
 }
 
 module.exports = Coin98Wallet;

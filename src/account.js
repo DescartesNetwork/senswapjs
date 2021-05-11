@@ -143,27 +143,27 @@ account.fromKeystore = (keystore, password) => {
   return account.fromSecretKey(secretKey);
 }
 
-account.sign = (data, secretKey) => {
-  if (typeof data !== 'string') throw new Error('Data must be a string');
+account.sign = (msg, secretKey) => {
+  if (typeof msg !== 'string') throw new Error('Message must be a string');
   const keyPair = account.fromSecretKey(secretKey);
   if (!keyPair) throw new Error('Invalid secret key');
   const address = keyPair.publicKey.toBase58();
   const bufSecretKey = keyPair.secretKey;
-  const serializedData = Buffer.from(data);
+  const serializedData = Buffer.from(msg);
   const bufSig = nacl.sign(serializedData, bufSecretKey);
   const sig = Buffer.from(bufSig).toString('hex');
-  return { address, sig, data }
+  return { address, sig, msg }
 }
 
-account.verify = (address, sig, data = null) => {
+account.verify = (address, sig, msg = null) => {
   if (!account.isAddress(address)) throw new Error('Invalid address');
   if (typeof sig !== 'string') throw new Error('Signature must be a string');
   const publicKey = account.fromAddress(address).toBuffer();
   const bufSig = Buffer.from(sig, 'hex');
   const bufMsg = nacl.sign.open(bufSig, publicKey);
-  const msg = Buffer.from(bufMsg).toString('utf8');
-  if (!data) return msg;
-  if (data && data === msg) return true;
+  const _msg = Buffer.from(bufMsg).toString('utf8');
+  if (!msg) return _msg;
+  if (msg && msg === _msg) return true;
   return false;
 }
 
