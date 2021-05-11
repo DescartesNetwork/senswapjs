@@ -10,7 +10,10 @@ const { SPLT, AuthorityType } = require('./splt');
 const Lamports = require('./lamports');
 const oracle = require('./oracle');
 const crypto = require('./crypto');
-const { WalletInterface, SecretKeyWallet, KeystoreWallet, Coin98Wallet } = require('./wallet');
+const {
+  WalletInterface, RawWallet,
+  SecretKeyWallet, KeystoreWallet, Coin98Wallet
+} = require('./wallet');
 
 module.exports = {
   account, ...account,
@@ -26,5 +29,6 @@ module.exports = {
   Lamports,
   oracle, ...oracle,
   crypto,
-  WalletInterface, SecretKeyWallet, KeystoreWallet, Coin98Wallet,
+  WalletInterface, RawWallet,
+  SecretKeyWallet, KeystoreWallet, Coin98Wallet,
 }
