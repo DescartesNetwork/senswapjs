@@ -51,7 +51,7 @@ class SecretKeyWallet extends WalletInterface {
   _certify = (msg) => {
     return new Promise((resolve, reject) => {
       try {
-        const confirmed = window.confirm(`Please confirm to cetify the message! Message: ${msg}`);
+        const confirmed = window.confirm(`Please confirm to certify the message! Message: ${msg}`);
         if (!confirmed) return reject('User rejects to certify the message');
         const secretKey = storage.get('SecretKey');
         const data = account.sign(msg, secretKey);
