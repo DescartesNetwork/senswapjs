@@ -68,7 +68,7 @@ class Coin98Wallet extends WalletInterface {
   _verify = (sig, msg = null) => {
     return new Promise((resolve, reject) => {
       const node = this._getNode();
-      return node._getAccount(addr => {
+      return node._getAccount().then(addr => {
         msg = bs58.encode(Buffer.from(msg, 'utf8'));
         return account.verify(addr, sig, msg);
       }).then(data => {
