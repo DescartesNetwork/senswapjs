@@ -50,7 +50,7 @@ class KeystoreWallet extends WalletInterface {
     });
   }
 
-  _cetify = (msg) => {
+  _certify = (msg) => {
     return new Promise((resolve, reject) => {
       try {
         const confirmed = window.confirm(`Please confirm to cetify the message! Message: ${msg}`);
