@@ -47,7 +47,7 @@ oracle._inverseCurve = (askAmount, bidReserve, askReserve) => {
 /**
  * Single Rake && Multiple Rake
  */
-oracle.__rake = (delta, reserveS, reserveA, reserveB) => {
+oracle._rake = (delta, reserveS, reserveA, reserveB) => {
   if (reserveS.isZero() || reserveA.isZero() || reserveB.isZero()) throw new Error('Invalid reserve');
   if (delta.isZero()) return [new BN(0), new BN(0), new BN(0)];
   const cbrtOfDeltaPlusReserve = delta.add(reserveS).mul(TRIPPLE_PRECISION).cbrt();
@@ -59,16 +59,6 @@ oracle.__rake = (delta, reserveS, reserveA, reserveB) => {
   const a = reserveA.mul(x).div(reserveS.add(x));
   const b = reserveB.mul(y).div(reserveS.add(z));
   return [s, a, b];
-}
-oracle._rake = (deltaS, deltaA, deltaB, reserveS, reserveA, reserveB) => {
-  const [s1, a1, b1] = oracle.__rake(deltaS, reserveS, reserveA, reserveB);
-  reserveS = reserveS.add(deltaS);
-  const [a2, b2, s2] = oracle.__rake(deltaA, reserveA, reserveB, reserveS);
-  reserveA = reserveA.add(deltaA);
-  const [b3, s3, a3] = oracle.__rake(deltaB, reserveB, reserveS, reserveA);
-  reserveB = reserveB.add(deltaB);
-  const lpt = s1.add(s2).add(s3);
-  return [lpt, reserveS, reserveA, reserveB];
 }
 
 /**
@@ -105,29 +95,33 @@ oracle.slippage = (bidAmount, bidReserve, askReserve, fee, feeDecimals) => {
   return slippage;
 }
 
-oracle.rake = (
-  deltaS, deltaA, deltaB,
-  reserveS, reserveA, reserveB,
-  fee, feeDecimals
-) => {
+oracle.rake = (deltaS, deltaA, deltaB, reserveS, reserveA, reserveB, reserveLPT) => {
   deltaS = new BN(deltaS.toString());
   deltaA = new BN(deltaA.toString());
   deltaB = new BN(deltaB.toString());
+  reserveSPrime = new BN(reserveS.toString());
   reserveS = new BN(reserveS.toString());
   reserveA = new BN(reserveA.toString());
   reserveB = new BN(reserveB.toString());
-  fee = new BN(fee.toString());
-  feeDecimals = new BN(feeDecimals.toString());
-  const [s, newReserveS, newReserveA, newReserveB] = oracle._rake(
-    deltaS, deltaA, deltaB,
-    reserveS, reserveA, reserveB,
-  );
-  const sFee = s.mul(fee).div(feeDecimals);
-  const sInFee = s.sub(sFee);
-  const newReserveSInFee = newReserveS.add(sFee);
+  reserveLPT = new BN(reserveLPT.toString());
+
+  const [s1, a1, b1] = oracle._rake(deltaS, reserveS, reserveA, reserveB);
+  reserveSPrime = reserveSPrime.add(deltaS).sub(s1);
+  reserveS = reserveS.add(deltaS);
+
+  const [a2, b2, s2] = oracle._rake(deltaA, reserveA, reserveB, reserveS);
+  reserveSPrime = reserveSPrime.add(s2);
+  reserveA = reserveA.add(deltaA);
+
+  const [b3, s3, a3] = oracle._rake(deltaB, reserveB, reserveS, reserveA);
+  reserveSPrime = reserveSPrime.add(s3);
+  reserveB = reserveB.add(deltaB);
+
+  const lpt = s1.mul(reserveLPT).div(reserveSPrime);
+
   return {
-    lpt: global.BigInt(sInFee.toString()),
-    newReserveS: global.BigInt(newReserveSInFee.toString()),
+    lpt: global.BigInt(lpt.toString()),
+    newReserveS: global.BigInt(newReserveS.toString()),
     newReserveA: global.BigInt(newReserveA.toString()),
     newReserveB: global.BigInt(newReserveB.toString()),
   }
