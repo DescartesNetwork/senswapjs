@@ -99,25 +99,18 @@ oracle.rake = (deltaS, deltaA, deltaB, reserveS, reserveA, reserveB, reserveLPT)
   deltaS = new BN(deltaS.toString());
   deltaA = new BN(deltaA.toString());
   deltaB = new BN(deltaB.toString());
-  let reserveSPrime = new BN(reserveS.toString());
   reserveS = new BN(reserveS.toString());
   reserveA = new BN(reserveA.toString());
   reserveB = new BN(reserveB.toString());
   reserveLPT = new BN(reserveLPT.toString());
 
   const [s1, a1, b1] = oracle._rake(deltaS, reserveS, reserveA, reserveB);
-  reserveSPrime = reserveSPrime.add(deltaS).sub(s1);
-  reserveS = reserveS.add(deltaS);
-
   const [a2, b2, s2] = oracle._rake(deltaA, reserveA, reserveB, reserveS);
-  reserveSPrime = reserveSPrime.add(s2);
-  reserveA = reserveA.add(deltaA);
-
   const [b3, s3, a3] = oracle._rake(deltaB, reserveB, reserveS, reserveA);
-  reserveSPrime = reserveSPrime.add(s3);
-  reserveB = reserveB.add(deltaB);
 
-  const lpt = s1.mul(reserveLPT).div(reserveSPrime);
+  const sPrime = s1.add(s2).add(s3);
+  const reserveSPrime = s1.add(deltaS).sub(sPrime);
+  const lpt = sPrime.mul(reserveLPT).div(reserveSPrime);
 
   return {
     lpt: global.BigInt(lpt.toString()),
