@@ -121,9 +121,9 @@ oracle.rake = (deltaS, deltaA, deltaB, reserveS, reserveA, reserveB, reserveLPT)
 
   return {
     lpt: global.BigInt(lpt.toString()),
-    newReserveS: global.BigInt(newReserveS.toString()),
-    newReserveA: global.BigInt(newReserveA.toString()),
-    newReserveB: global.BigInt(newReserveB.toString()),
+    newReserveS: global.BigInt(reserveS.toString()),
+    newReserveA: global.BigInt(reserveA.toString()),
+    newReserveB: global.BigInt(reserveB.toString()),
   }
 }
 
