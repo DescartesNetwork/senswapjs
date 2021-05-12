@@ -109,7 +109,7 @@ oracle.rake = (deltaS, deltaA, deltaB, reserveS, reserveA, reserveB, reserveLPT)
   const [b3, s3, a3] = oracle._rake(deltaB, reserveB, reserveS, reserveA);
 
   const sPrime = s1.add(s2).add(s3);
-  const reserveSPrime = s1.add(deltaS).sub(sPrime);
+  const reserveSPrime = reserveS.add(deltaS).sub(sPrime);
   const lpt = sPrime.mul(reserveLPT).div(reserveSPrime);
 
   return {
