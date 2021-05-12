@@ -226,9 +226,9 @@ class LiteSwap {
       return this._swap.getPoolData(poolAddress).then(data => {
         const {
           vault: { address: _vaultAddress },
-          treasury_s: { address: _treasurySAddress, mint: { address: _mintSAddress } },
-          treasury_a: { address: _treasuryAAddress, mint: { address: _mintAAddress } },
-          treasury_b: { address: _treasuryBAddress, mint: { address: _mintBAddress } },
+          treasury_s: { address: _treasurySAddress, mint: _mintSAddress },
+          treasury_a: { address: _treasuryAAddress, mint: _mintAAddress },
+          treasury_b: { address: _treasuryBAddress, mint: _mintBAddress },
         } = data;
         vaultAddress = _vaultAddress;
         mintSAddress = _mintSAddress;
