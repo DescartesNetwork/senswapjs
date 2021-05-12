@@ -57,6 +57,46 @@ class Swap extends Tx {
     });
   }
 
+  _getMintData = (mintAddress) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
+      const mintPublicKey = account.fromAddress(mintAddress);
+
+      return this.connection.getAccountInfo(mintPublicKey).then(re => {
+        if (!re) return reject('Uninitialized mint');
+        const { data } = re;
+        if (!data) return reject(`Cannot read data of ${mintAddress}`);
+        const mintLayout = new soproxABI.struct(schema.MINT_SCHEMA);
+        if (data.length !== mintLayout.space) return reject('Unmatched buffer length');
+        mintLayout.fromBuffer(data);
+        const result = { address: mintAddress, ...mintLayout.value };
+        return resolve(result);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  _getAccountData = (accountAddress) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(accountAddress)) return reject('Invalid account address');
+      const accountPublicKey = account.fromAddress(accountAddress);
+
+      return this.connection.getAccountInfo(accountPublicKey).then(re => {
+        if (!re) return reject('Uninitialized account');
+        const { data: accountData } = re;
+        if (!accountData) return reject(`Cannot read data of ${result.address}`);
+        const accountLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
+        if (accountData.length !== accountLayout.space) return reject('Unmatched buffer length');
+        accountLayout.fromBuffer(accountData);
+        const result = { address: accountAddress, ...accountLayout.value };
+        return resolve(result);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
   getPoolData = (poolAddress) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
@@ -87,25 +127,25 @@ class Swap extends Tx {
         return this._splt.getMintData(result.mint_lpt.address);
       }).then(mintData => {
         result.mint_lpt = { ...result.mint_lpt, ...mintData };
-        return this._splt.getAccountData(result.vault.address);
+        return this._getAccountData(result.vault.address);
       }).then(vaultData => {
         result.vault = { ...result.vault, ...vaultData };
-        return this._splt.getMintData(result.mint_s.address);
+        return this._getMintData(result.mint_s.address);
       }).then(mintData => {
         result.mint_s = { ...result.mint_s, ...mintData };
-        return this._splt.getAccountData(result.treasury_s.address);
+        return this._getAccountData(result.treasury_s.address);
       }).then(treasuryData => {
         result.treasury_s = { ...result.treasury_s, ...treasuryData };
-        return this._splt.getMintData(result.mint_a.address);
+        return this._getMintData(result.mint_a.address);
       }).then(mintData => {
         result.mint_a = { ...result.mint_a, ...mintData };
-        return this._splt.getAccountData(result.treasury_a.address);
+        return this._getAccountData(result.treasury_a.address);
       }).then(treasuryData => {
         result.treasury_a = { ...result.treasury_a, ...treasuryData };
-        return this._splt.getMintData(result.mint_b.address);
+        return this._getMintData(result.mint_b.address);
       }).then(mintData => {
         result.mint_b = { ...result.mint_b, ...mintData };
-        return this._splt.getAccountData(result.treasury_b.address);
+        return this._getAccountData(result.treasury_b.address);
       }).then(treasuryData => {
         result.treasury_b = { ...result.treasury_b, ...treasuryData };
         return resolve(result);
