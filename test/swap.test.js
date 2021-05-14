@@ -440,6 +440,16 @@ describe('Swap library', function () {
       });
     });
 
+    it('Should transfer vault', function (done) {
+      const swap = new Swap();
+      swap.transferVault(POOL_ADDRESS_1, VAULT_ADDRESS_0, payer).then(txId => {
+        console.log(txId)
+        return done();
+      }).catch(er => {
+        return done(er);
+      });
+    });
+
     it('Should transfer pool ownership', function (done) {
       const swap = new Swap();
       const newOwnerAddress = createAccount().publicKey.toBase58();

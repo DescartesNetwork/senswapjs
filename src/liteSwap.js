@@ -154,9 +154,9 @@ class LiteSwap {
         lptAddress = associatedAccountAddress;
         const {
           mint_lpt: { address: mintLPTAddress },
-          treasury_s: { address: treasurySAddress },
-          treasury_a: { address: treasuryAAddress },
-          treasury_b: { address: treasuryBAddress },
+          treasury_s: treasurySAddress,
+          treasury_a: treasuryAAddress,
+          treasury_b: treasuryBAddress,
         } = data;
         return this._swap.addLiquidity(
           deltaS, deltaA, deltaB,
@@ -188,9 +188,9 @@ class LiteSwap {
       }).then(associatedAccountAddress => {
         const {
           mint_lpt: { address: mintLPTAddress },
-          treasury_s: { address: treasurySAddress },
-          treasury_a: { address: treasuryAAddress },
-          treasury_b: { address: treasuryBAddress },
+          treasury_s: treasurySAddress,
+          treasury_a: treasuryAAddress,
+          treasury_b: treasuryBAddress,
         } = data;
         lptAddress = associatedAccountAddress;
         return this._swap.removeLiquidity(
@@ -226,9 +226,12 @@ class LiteSwap {
       return this._swap.getPoolData(poolAddress).then(data => {
         const {
           vault: { address: _vaultAddress },
-          treasury_s: { address: _treasurySAddress, mint: _mintSAddress },
-          treasury_a: { address: _treasuryAAddress, mint: _mintAAddress },
-          treasury_b: { address: _treasuryBAddress, mint: _mintBAddress },
+          mint_s: { address: _mintSAddress },
+          treasury_s: _treasurySAddress,
+          mint_a: { address: _mintAAddress },
+          treasury_a: _treasuryAAddress,
+          mint_b: { address: _mintBAddress },
+          treasury_b: _treasuryBAddress,
         } = data;
         vaultAddress = _vaultAddress;
         mintSAddress = _mintSAddress;
@@ -314,6 +317,13 @@ class LiteSwap {
    */
   transferPoolOwnership = (poolAddress, newOwnerAddress, wallet) => {
     return this._swap.transferPoolOwnership(poolAddress, newOwnerAddress, wallet);
+  }
+
+  /**
+   * Transfer Vault
+   */
+  transferVault = (poolAddress, newVaultAddress, wallet) => {
+    return this._swap.transferVault(poolAddress, newVaultAddress, wallet);
   }
 }
 

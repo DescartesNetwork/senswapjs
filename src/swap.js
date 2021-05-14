@@ -117,11 +117,8 @@ class Swap extends Tx {
           mint_lpt: { address: poolLayout.value.mint_lpt },
           vault: { address: poolLayout.value.vault },
           mint_s: { address: poolLayout.value.mint_s },
-          treasury_s: { address: poolLayout.value.treasury_s },
           mint_a: { address: poolLayout.value.mint_a },
-          treasury_a: { address: poolLayout.value.treasury_a },
           mint_b: { address: poolLayout.value.mint_b },
-          treasury_b: { address: poolLayout.value.treasury_b },
         }
 
         return this._splt.getMintData(result.mint_lpt.address);
@@ -133,21 +130,12 @@ class Swap extends Tx {
         return this._getMintData(result.mint_s.address);
       }).then(mintData => {
         result.mint_s = { ...result.mint_s, ...mintData };
-        return this._getAccountData(result.treasury_s.address);
-      }).then(treasuryData => {
-        result.treasury_s = { ...result.treasury_s, ...treasuryData };
         return this._getMintData(result.mint_a.address);
       }).then(mintData => {
         result.mint_a = { ...result.mint_a, ...mintData };
-        return this._getAccountData(result.treasury_a.address);
-      }).then(treasuryData => {
-        result.treasury_a = { ...result.treasury_a, ...treasuryData };
         return this._getMintData(result.mint_b.address);
       }).then(mintData => {
         result.mint_b = { ...result.mint_b, ...mintData };
-        return this._getAccountData(result.treasury_b.address);
-      }).then(treasuryData => {
-        result.treasury_b = { ...result.treasury_b, ...treasuryData };
         return resolve(result);
       }).catch(er => {
         return reject(er);
@@ -679,6 +667,43 @@ class Swap extends Tx {
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },
             { pubkey: poolPublicKey, isSigner: false, isWritable: true },
             { pubkey: newOwnerPublicKey, isSigner: false, isWritable: false },
+          ],
+          programId: this.swapProgramId,
+          data: layout.toBuffer()
+        });
+        transaction.add(instruction);
+        transaction.feePayer = payerPublicKey;
+        return wallet.sign(transaction);
+      }).then(payerSig => {
+        this._addSignature(transaction, payerSig);
+        return this._sendTransaction(transaction);
+      }).then(txId => {
+        return resolve(txId);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
+  transferVault = (poolAddress, newVaultAddress, wallet) => {
+    return new Promise((resolve, reject) => {
+      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
+      if (!account.isAddress(newVaultAddress)) return reject('Invalid vault address');
+
+      let transaction = new Transaction();
+      const poolPublicKey = account.fromAddress(poolAddress);
+      const newVaultPublicKey = account.fromAddress(newVaultAddress);
+      return this._addRecentCommitment(transaction).then(txWithCommitment => {
+        transaction = txWithCommitment;
+        return wallet.getAccount();
+      }).then(payerAddress => {
+        const payerPublicKey = account.fromAddress(payerAddress);
+        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 8 });
+        const instruction = new TransactionInstruction({
+          keys: [
+            { pubkey: payerPublicKey, isSigner: true, isWritable: false },
+            { pubkey: poolPublicKey, isSigner: false, isWritable: true },
+            { pubkey: newVaultPublicKey, isSigner: false, isWritable: false },
           ],
           programId: this.swapProgramId,
           data: layout.toBuffer()
