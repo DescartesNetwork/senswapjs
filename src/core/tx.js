@@ -57,11 +57,39 @@ class Tx {
     return { publicKey, signature }
   }
 
+  /**
+   * _isReadyForRent
+   * @param {*} newAccount 
+   * @param {*} space 
+   * @param {*} programId 
+   * @returns Promise
+   * Promise.resolve(bool)
+   *   true - is not rented
+   *   false - is rented but not initialized
+   * Promise.reject()
+   */
+  _isReadyForRent = (newAccount, space, programId) => {
+    return new Promise((resolve, _reject) => {
+      return this.connection.getAccountInfo(newAccount.publicKey).then(re => {
+        if (!re) return resolve(true);
+        if (!re.owner.equals(programId)) return reject('Invalid program id');
+        if (re.data.length !== space) return reject('Invalid data length');
+        if (!re.data.every(e => !e)) return reject('Account was initilized');
+        return resolve(false);
+      }).catch(er => {
+        return reject(er);
+      });
+    });
+  }
+
   _rentAccount = (wallet, newAccount, space, programId) => {
     return new Promise((resolve, reject) => {
       let transaction = new Transaction();
       let fromPubkey = null;
-      return this._addRecentCommitment(transaction).then(txWithCommitment => {
+      return this._isReadyForRent(newAccount, space, programId).then(rented => {
+        if (!rented) throw new Error('No error');
+        return this._addRecentCommitment(transaction);
+      }).then(txWithCommitment => {
         transaction = txWithCommitment;
         return wallet.getAccount();
       }).then(payerAddress => {
@@ -86,6 +114,7 @@ class Tx {
       }).then(txId => {
         return resolve(txId);
       }).catch(er => {
+        if (er.message === 'No error') return resolve();
         return reject(er);
       });
     });

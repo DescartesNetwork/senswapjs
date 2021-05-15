@@ -26,7 +26,8 @@ class Coin98Wallet extends WalletInterface {
   _getAccount = () => {
     return new Promise((resolve, reject) => {
       const node = this._getNode();
-      return node.request({ method: 'sol_accounts' }).then(([acc]) => {
+      return node.request({ method: 'sol_accounts' }).then(re => {
+        const [acc] = re || [];
         if (!acc) return reject('There is no Solana account');
         return resolve(acc);
       }).catch(er => {
