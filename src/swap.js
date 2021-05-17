@@ -684,43 +684,6 @@ class Swap extends Tx {
       });
     });
   }
-
-  transferVault = (poolAddress, newVaultAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
-      if (!account.isAddress(newVaultAddress)) return reject('Invalid vault address');
-
-      let transaction = new Transaction();
-      const poolPublicKey = account.fromAddress(poolAddress);
-      const newVaultPublicKey = account.fromAddress(newVaultAddress);
-      return this._addRecentCommitment(transaction).then(txWithCommitment => {
-        transaction = txWithCommitment;
-        return wallet.getAccount();
-      }).then(payerAddress => {
-        const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 8 });
-        const instruction = new TransactionInstruction({
-          keys: [
-            { pubkey: payerPublicKey, isSigner: true, isWritable: false },
-            { pubkey: poolPublicKey, isSigner: false, isWritable: true },
-            { pubkey: newVaultPublicKey, isSigner: false, isWritable: false },
-          ],
-          programId: this.swapProgramId,
-          data: layout.toBuffer()
-        });
-        transaction.add(instruction);
-        transaction.feePayer = payerPublicKey;
-        return wallet.sign(transaction);
-      }).then(payerSig => {
-        this._addSignature(transaction, payerSig);
-        return this._sendTransaction(transaction);
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
-  }
 }
 
 module.exports = Swap;

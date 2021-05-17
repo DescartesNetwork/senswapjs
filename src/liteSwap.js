@@ -318,13 +318,6 @@ class LiteSwap {
   transferPoolOwnership = (poolAddress, newOwnerAddress, wallet) => {
     return this._swap.transferPoolOwnership(poolAddress, newOwnerAddress, wallet);
   }
-
-  /**
-   * Transfer Vault
-   */
-  transferVault = (poolAddress, newVaultAddress, wallet) => {
-    return this._swap.transferVault(poolAddress, newVaultAddress, wallet);
-  }
 }
 
 module.exports = LiteSwap;
