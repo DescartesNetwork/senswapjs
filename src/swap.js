@@ -296,13 +296,17 @@ class Swap extends Tx {
     wallet
   ) => {
     return new Promise((resolve, reject) => {
+      if (!srcSAddress && !srcAAddress && !srcBAddress) return reject('Invalid source address');
       if (!account.isAddress(poolAddress)) return reject('Invalid pool address');
       if (!account.isAddress(lptAddress)) return reject('Invalid lpt address');
       if (!account.isAddress(mintLPTAddress)) return reject('Invalid mint LPT address');
+      srcSAddress = srcSAddress || DEFAULT_EMPTY_ADDRESSS;
       if (!account.isAddress(srcSAddress)) return reject('Invalid source S address');
       if (!account.isAddress(treasurySAddress)) return reject('Invalid treasury S address');
+      srcAAddress = srcAAddress || DEFAULT_EMPTY_ADDRESSS;
       if (!account.isAddress(srcAAddress)) return reject('Invalid source A address');
       if (!account.isAddress(treasuryAAddress)) return reject('Invalid treasury A address');
+      srcBAddress = srcBAddress || DEFAULT_EMPTY_ADDRESSS;
       if (!account.isAddress(srcBAddress)) return reject('Invalid source B address');
       if (!account.isAddress(treasuryBAddress)) return reject('Invalid treasury B address');
 
