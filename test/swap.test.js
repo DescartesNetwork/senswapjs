@@ -103,7 +103,9 @@ describe('Swap library', function () {
     TREASURY_A_ADDRESS_0 = treasuryA.publicKey.toBase58();
     TREASURY_B_ADDRESS_0 = treasuryB.publicKey.toBase58();
 
-    payer.getAccount().then(payerAddress => {
+    let payerAddress = '';
+    payer.getAccount().then(re => {
+      payerAddress = re;
       return deriveAssociatedAddress(
         payerAddress,
         MINT_LPT_ADDRESS_0,
@@ -117,7 +119,7 @@ describe('Swap library', function () {
       POOL_ADDRESS_0 = pool.publicKey.toBase58();
       return swap.initializePool(
         1000000000000n, 5000000000000n, 200000000000n,
-        pool, LPT_ADDRESS_0, mintLPT, vault,
+        payerAddress, pool, LPT_ADDRESS_0, mintLPT, vault,
         ACCOUNT_ADDRESS_0, MINT_ADDRESS_0, treasuryS,
         ACCOUNT_ADDRESS_1, MINT_ADDRESS_1, treasuryA,
         ACCOUNT_ADDRESS_2, MINT_ADDRESS_2, treasuryB,
@@ -144,7 +146,9 @@ describe('Swap library', function () {
     TREASURY_A_ADDRESS_1 = treasuryA.publicKey.toBase58();
     TREASURY_B_ADDRESS_1 = treasuryB.publicKey.toBase58();
 
-    payer.getAccount().then(payerAddress => {
+    let payerAddress = '';
+    payer.getAccount().then(re => {
+      payerAddress = re;
       return deriveAssociatedAddress(
         payerAddress,
         MINT_LPT_ADDRESS_1,
@@ -158,7 +162,7 @@ describe('Swap library', function () {
       POOL_ADDRESS_1 = pool.publicKey.toBase58();
       return swap.initializePool(
         1000000000000n, 5000000000000n, 200000000000n,
-        pool, LPT_ADDRESS_1, mintLPT, vault,
+        payerAddress, pool, LPT_ADDRESS_1, mintLPT, vault,
         ACCOUNT_ADDRESS_0, MINT_ADDRESS_0, treasuryS,
         ACCOUNT_ADDRESS_1, MINT_ADDRESS_1, treasuryA,
         ACCOUNT_ADDRESS_2, MINT_ADDRESS_2, treasuryB,
@@ -253,10 +257,15 @@ describe('Swap library', function () {
       const treasuryB = createAccount();
       const lptAddress = createAccount().publicKey.toBase58();
       const vault = createAccount();
-      createStrictAccount(swap.swapProgramId).then(pool => {
+
+      let payerAddress = '';
+      payer.getAccount().then(re => {
+        payerAddress = re;
+        return createStrictAccount(swap.swapProgramId);
+      }).then(pool => {
         return swap.initializePool(
           0n, 50000000000n, 50000000000n,
-          pool, lptAddress, mintLPT, vault,
+          payerAddress, pool, lptAddress, mintLPT, vault,
           ACCOUNT_ADDRESS_0, MINT_ADDRESS_0, treasuryS,
           ACCOUNT_ADDRESS_1, MINT_ADDRESS_1, treasuryA,
           ACCOUNT_ADDRESS_2, MINT_ADDRESS_2, treasuryB,
@@ -376,7 +385,9 @@ describe('Swap library', function () {
       const treasuryAAddress = treasuryA.publicKey.toBase58();
       const treasuryBAddress = treasuryB.publicKey.toBase58();
 
-      payer.getAccount().then(payerAddress => {
+      let payerAddress = '';
+      payer.getAccount().then(re => {
+        payerAddress = re;
         return deriveAssociatedAddress(
           payerAddress,
           mintLPTAddress,
@@ -390,7 +401,7 @@ describe('Swap library', function () {
         poolAddress = pool.publicKey.toBase58();
         return swap.initializePool(
           1000000000000n, 50000000000n, 50000000000n,
-          pool, lptAddress, mintLPT, vault,
+          payerAddress, pool, lptAddress, mintLPT, vault,
           ACCOUNT_ADDRESS_0, MINT_ADDRESS_0, treasuryS,
           ACCOUNT_ADDRESS_1, MINT_ADDRESS_1, treasuryA,
           ACCOUNT_ADDRESS_2, MINT_ADDRESS_2, treasuryB,
@@ -434,16 +445,6 @@ describe('Swap library', function () {
       const swap = new Swap();
       const amount = 1000n;
       swap.earn(amount, POOL_ADDRESS_0, VAULT_ADDRESS_0, ACCOUNT_ADDRESS_0, payer).then(txId => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
-    });
-
-    it('Should transfer vault', function (done) {
-      const swap = new Swap();
-      swap.transferVault(POOL_ADDRESS_1, VAULT_ADDRESS_0, payer).then(txId => {
-        console.log(txId)
         return done();
       }).catch(er => {
         return done(er);

@@ -61,7 +61,7 @@ class LiteSwap {
   /**
    * Initialize Pool
    */
-  initializePool = (reserveS, reserveA, reserveB, srcSAddress, srcAAddress, srcBAddress, wallet) => {
+  initializePool = (reserveS, reserveA, reserveB, srcSAddress, srcAAddress, srcBAddress, ownerAddress, wallet) => {
     let pool = null;
     let lptAddress = '';
     const mintLPT = createAccount();
@@ -97,7 +97,7 @@ class LiteSwap {
         mintBAddress = address;
         return this._swap.initializePool(
           reserveS, reserveA, reserveB,
-          pool, lptAddress, mintLPT, vault,
+          ownerAddress, pool, lptAddress, mintLPT, vault,
           srcSAddress, mintSAddress, treasuryS,
           srcAAddress, mintAAddress, treasuryA,
           srcBAddress, mintBAddress, treasuryB,

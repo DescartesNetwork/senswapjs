@@ -149,7 +149,7 @@ class Swap extends Tx {
 
   initializePool = (
     reserveS, reserveA, reserveB,
-    pool, lptAddress, mintLPT, vault,
+    ownerAddress, pool, lptAddress, mintLPT, vault,
     srcSAddress, mintSAddress, treasuryS,
     srcAAddress, mintAAddress, treasuryA,
     srcBAddress, mintBAddress, treasuryB,
@@ -159,6 +159,7 @@ class Swap extends Tx {
       srcSAddress = srcSAddress || DEFAULT_EMPTY_ADDRESSS;
       srcAAddress = srcAAddress || DEFAULT_EMPTY_ADDRESSS;
       srcBAddress = srcBAddress || DEFAULT_EMPTY_ADDRESSS;
+      if (!account.isAddress(ownerAddress)) return reject('Invalid owner address');
       if (!account.isAddress(lptAddress)) return reject('Invalid lpt address');
       if (!account.isAddress(srcSAddress)) return reject('Invalid source address');
       if (!account.isAddress(mintSAddress)) return reject('Invalid mint address');
@@ -170,6 +171,7 @@ class Swap extends Tx {
       if (mintSAddress === mintBAddress) return reject('There are same mint addresses');
 
       let transaction = new Transaction();
+      const ownerPublicKey = account.fromAddress(ownerAddress);
       const lptPublicKey = account.fromAddress(lptAddress);
       const srcSPublicKey = account.fromAddress(srcSAddress);
       const mintSPublicKey = account.fromAddress(mintSAddress);
@@ -227,6 +229,7 @@ class Swap extends Tx {
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: true },
+            { pubkey: ownerPublicKey, isSigner: false, isWritable: false },
             { pubkey: pool.publicKey, isSigner: true, isWritable: true },
             { pubkey: lptPublicKey, isSigner: false, isWritable: true },
             { pubkey: mintLPT.publicKey, isSigner: true, isWritable: true },
