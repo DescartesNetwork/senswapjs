@@ -458,7 +458,7 @@ class Swap extends Tx {
   }
 
   swap = (
-    amount,
+    amount, limit,
     poolAddress, vaultAddress,
     srcAddress, treasuryBidAddress,
     dstAddress, treasuryAskAddress,
@@ -493,10 +493,11 @@ class Swap extends Tx {
         return wallet.getAccount();
       }).then(payerAddress => {
         const payerPublicKey = account.fromAddress(payerAddress);
-        const layout = new soproxABI.struct(
-          [{ key: 'code', type: 'u8' }, { key: 'amount', type: 'u64' }],
-          { code: 3, amount }
-        );
+        const layout = new soproxABI.struct([
+          { key: 'code', type: 'u8' },
+          { key: 'amount', type: 'u64' },
+          { key: 'limit', type: 'u64' }
+        ], { code: 3, amount, limit });
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: false },

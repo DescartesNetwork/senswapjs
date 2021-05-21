@@ -212,7 +212,7 @@ class LiteSwap {
   /**
    * Swap
    */
-  swap = (amount, poolAddress, srcAddress, dstAddress, wallet) => {
+  swap = (amount, limit, poolAddress, srcAddress, dstAddress, wallet) => {
     return new Promise((resolve, reject) => {
       let vaultAddress = '';
       let treasuryBidAddress = '';
@@ -253,7 +253,7 @@ class LiteSwap {
         if (!treasuryBidAddress) return reject('Invalid source address');
         if (!treasuryAskAddress) return reject('Invalid destination address');
         return this._swap.swap(
-          amount,
+          amount, limit,
           poolAddress, vaultAddress,
           srcAddress, treasuryBidAddress,
           dstAddress, treasuryAskAddress,

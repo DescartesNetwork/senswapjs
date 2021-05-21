@@ -278,11 +278,11 @@ describe('Swap library', function () {
       });
     });
 
-    it('Should swap', function (done) {
+    it('Should be a successful swap', function (done) {
       const swap = new Swap();
       swap.getPoolData(POOL_ADDRESS_0).then(data => {
         return swap.swap(
-          10000000000n,
+          10000000000n, 0n,
           POOL_ADDRESS_0, VAULT_ADDRESS_0,
           ACCOUNT_ADDRESS_1, TREASURY_A_ADDRESS_0,
           ACCOUNT_ADDRESS_2, TREASURY_B_ADDRESS_0,
@@ -296,6 +296,24 @@ describe('Swap library', function () {
       }).catch(er => {
         return done(er);
       })
+    });
+
+    it('Should be a failed swap (exceed limit)', function (done) {
+      const swap = new Swap();
+      swap.getPoolData(POOL_ADDRESS_0).then(data => {
+        return swap.swap(
+          10000000000n, 1000000000n,
+          POOL_ADDRESS_0, VAULT_ADDRESS_0,
+          ACCOUNT_ADDRESS_1, TREASURY_A_ADDRESS_0,
+          ACCOUNT_ADDRESS_2, TREASURY_B_ADDRESS_0,
+          TREASURY_S_ADDRESS_0,
+          payer
+        );
+      }).then(txId => {
+        return done('Swap bypass the limit');
+      }).catch(er => {
+        return done();
+      });
     });
   });
 
