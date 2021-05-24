@@ -96,7 +96,6 @@ oracle.slippage = (bidAmount, bidReserve, askReserve, fee, feeDecimals) => {
 }
 
 oracle.rake = (deltaS, deltaA, deltaB, reserveS, reserveA, reserveB, reserveLPT) => {
-  let lpt = new BN(0);
   let reserveSPrime = new BN(0);
   deltaS = new BN(deltaS.toString());
   deltaA = new BN(deltaA.toString());
@@ -109,20 +108,20 @@ oracle.rake = (deltaS, deltaA, deltaB, reserveS, reserveA, reserveB, reserveLPT)
   const [s1, a1, b1] = oracle._rake(deltaS, reserveS, reserveA, reserveB);
   reserveS = reserveS.add(deltaS);
   reserveSPrime = reserveS.sub(s1);
-  lpt = lpt.add(s1.mul(reserveLPT).div(reserveSPrime));
-  reserveLPT = reserveLPT.add(lpt);
+  const lpt1 = s1.mul(reserveLPT).div(reserveSPrime);
+  reserveLPT = reserveLPT.add(lpt1);
 
   const [a2, b2, s2] = oracle._rake(deltaA, reserveA, reserveB, reserveS);
   reserveA = reserveA.add(deltaA);
   reserveSPrime = reserveS.sub(s2);
-  lpt = lpt.add(s2.mul(reserveLPT).div(reserveSPrime));
-  reserveLPT = reserveLPT.add(lpt);
+  const lpt2 = s2.mul(reserveLPT).div(reserveSPrime);
+  reserveLPT = reserveLPT.add(lpt2);
 
   const [b3, s3, a3] = oracle._rake(deltaB, reserveB, reserveS, reserveA);
   reserveB = reserveB.add(deltaB);
   reserveSPrime = reserveS.sub(s3);
-  lpt = lpt.add(s3.mul(reserveLPT).div(reserveSPrime));
-  reserveLPT = reserveLPT.add(lpt);
+  const lpt3 = s3.mul(reserveLPT).div(reserveSPrime);
+  const lpt = lpt1.add(lpt2).add(lpt3);
 
   return {
     lpt: global.BigInt(lpt.toString()),
