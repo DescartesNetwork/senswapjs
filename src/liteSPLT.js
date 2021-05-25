@@ -34,7 +34,7 @@ class LiteSPLT {
     return this._splt.initializeMint(decimals, mintAuthorityAddress, freezeAuthorityAddress, mint, wallet);
   }
 
-  initializeAccount = (mintAddress, wallet) => {
+  initializeAccount = (mintAddress, wallet, ownerAddress = null) => {
     return new Promise((resolve, reject) => {
       let accountAddress = null;
       return wallet.getAccount().then(walletAddress => {
@@ -46,7 +46,7 @@ class LiteSPLT {
         );
       }).then(associatedAccountAddress => {
         accountAddress = associatedAccountAddress;
-        return this._splt.initializeAccount(associatedAccountAddress, mintAddress, wallet);
+        return this._splt.initializeAccount(associatedAccountAddress, mintAddress, wallet, ownerAddress);
       }).then(txId => {
         return resolve({ accountAddress, txId });
       }).catch(er => {
