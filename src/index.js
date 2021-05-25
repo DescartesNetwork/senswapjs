@@ -7,6 +7,7 @@ const schema = require('./schema');
 const Swap = require('./swap');
 const LiteSwap = require('./liteSwap');
 const { SPLT, AuthorityType } = require('./splt');
+const LiteSPLT = require('./liteSPLT');
 const Lamports = require('./lamports');
 const oracle = require('./oracle');
 const crypto = require('./crypto');
@@ -22,10 +23,8 @@ module.exports = {
   hdkey, ...hdkey,
   util, ...util,
   schema, ...schema,
-  Swap,
-  LiteSwap,
-  SPLT,
-  AuthorityType,
+  Swap, LiteSwap,
+  SPLT, AuthorityType, LiteSPLT,
   Lamports,
   oracle, ...oracle,
   crypto,
