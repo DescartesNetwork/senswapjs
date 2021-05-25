@@ -203,6 +203,7 @@ class SPLT extends Tx {
 
   _initializeArbitraryAccount = (newAccount, ownerAddress, mintAddress, wallet) => {
     return new Promise((resolve, reject) => {
+      if (!account.isAddress(ownerAddress)) return reject('Invalid owner address');
       if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
 
       let transaction = new Transaction();
@@ -245,6 +246,7 @@ class SPLT extends Tx {
   _initializeAssociatedAccount = (accountAddress, ownerAddress, mintAddress, wallet) => {
     return new Promise((resolve, reject) => {
       if (!account.isAddress(accountAddress)) return reject('Invalid account address');
+      if (!account.isAddress(ownerAddress)) return reject('Invalid owner address');
       if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
 
       let transaction = new Transaction();
