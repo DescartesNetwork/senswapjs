@@ -191,7 +191,9 @@ class SPLT extends Tx {
     return new Promise((resolve, reject) => {
       if (!accountOrAddress) return reject('Invalid token account/address');
       const _initializeAccount = account.isAddress(accountOrAddress) ? this._initializeAssociatedAccount : this._initializeArbitraryAccount;
-      return _initializeAccount(accountOrAddress, ownerAddress, mintAddress, wallet).then(txId => {
+      return wallet.getAccount().then(walletAddress => {
+        return _initializeAccount(accountOrAddress, ownerAddress || walletAddress, mintAddress, wallet);
+      }).then(txId => {
         return resolve(txId);
       }).catch(er => {
         return reject(er);
@@ -204,8 +206,7 @@ class SPLT extends Tx {
       if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
 
       let transaction = new Transaction();
-      let ownerPublicKey = null;
-      if (account.isAddress(ownerAddress)) ownerPublicKey = account.fromAddress(ownerAddress);
+      const ownerPublicKey = account.fromAddress(ownerAddress);;
       const mintPublicKey = account.fromAddress(mintAddress);
       const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
 
@@ -221,7 +222,7 @@ class SPLT extends Tx {
           keys: [
             { pubkey: newAccount.publicKey, isSigner: false, isWritable: true },
             { pubkey: mintPublicKey, isSigner: false, isWritable: false },
-            { pubkey: ownerPublicKey || payerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: ownerPublicKey, isSigner: false, isWritable: false },
             { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
           ],
           programId: this.spltProgramId,
@@ -248,14 +249,13 @@ class SPLT extends Tx {
 
       let transaction = new Transaction();
       let payerPublicKey = null;
-      let ownerPublicKey = null;
-      if (account.isAddress(ownerAddress)) ownerPublicKey = account.fromAddress(ownerAddress);
+      const ownerPublicKey = account.fromAddress(ownerAddress);
       const accountPublicKey = account.fromAddress(accountAddress);
       const mintPublicKey = account.fromAddress(mintAddress);
       return wallet.getAccount().then(payerAddress => {
         payerPublicKey = account.fromAddress(payerAddress);
         return account.deriveAssociatedAddress(
-          payerAddress,
+          ownerAddress,
           mintAddress,
           this.spltProgramId.toBase58(),
           this.splataProgramId.toBase58()
@@ -269,7 +269,7 @@ class SPLT extends Tx {
           keys: [
             { pubkey: payerPublicKey, isSigner: true, isWritable: true },
             { pubkey: accountPublicKey, isSigner: false, isWritable: true },
-            { pubkey: ownerPublicKey || payerPublicKey, isSigner: false, isWritable: false },
+            { pubkey: ownerPublicKey, isSigner: false, isWritable: false },
             { pubkey: mintPublicKey, isSigner: false, isWritable: false },
             { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
             { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
