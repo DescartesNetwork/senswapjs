@@ -39,7 +39,7 @@ class LiteSPLT {
       let accountAddress = null;
       return wallet.getAccount().then(walletAddress => {
         return deriveAssociatedAddress(
-          walletAddress,
+          ownerAddress || walletAddress,
           mintAddress,
           this._splt.spltProgramId.toBase58(),
           this._splt.splataProgramId.toBase58(),
