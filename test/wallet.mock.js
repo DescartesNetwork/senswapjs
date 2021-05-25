@@ -7,20 +7,16 @@ class Wallet {
     this.payer = fromSecretKey(secretKey);
   }
 
-  getAccount = () => {
-    return new Promise((resolve, reject) => {
-      const address = this.payer.publicKey.toBase58();
-      return resolve(address);
-    });
+  getAccount = async () => {
+    const address = this.payer.publicKey.toBase58();
+    return address;
   }
 
-  sign = (transaction) => {
-    return new Promise((resolve, reject) => {
-      const signData = transaction.serializeMessage();
-      const publicKey = this.payer.publicKey;
-      const signature = nacl.sign.detached(signData, this.payer.secretKey);
-      return resolve({ publicKey, signature });
-    });
+  sign = async (transaction) => {
+    const signData = transaction.serializeMessage();
+    const publicKey = this.payer.publicKey;
+    const signature = nacl.sign.detached(signData, this.payer.secretKey);
+    return { publicKey, signature };
   }
 }
 

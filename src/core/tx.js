@@ -15,32 +15,19 @@ class Tx {
     return connection;
   }
 
-  _sendTransaction = (transaction) => {
-    return new Promise((resolve, reject) => {
-      const tx = transaction.serialize();
-      let txId = '';
-      return this.connection.sendRawTransaction(tx, { skipPreflight: true, commitment: 'recent' }).then(signature => {
-        txId = signature;
-        return this.connection.confirmTransaction(txId, 'recent');
-      }).then(re => {
-        const { value: { err } } = re;
-        if (err) return reject(err);
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  _sendTransaction = async (transaction) => {
+    const tx = transaction.serialize();
+    const txId = await this.connection.sendRawTransaction(tx, { skipPreflight: true, commitment: 'recent' });
+    const data = await this.connection.confirmTransaction(txId, 'recent');
+    const { value: { err } } = data;
+    if (err) throw new Error(err);
+    return txId;
   }
 
-  _addRecentCommitment = (transaction) => {
-    return new Promise((resolve, reject) => {
-      return this.connection.getRecentBlockhash('recent').then(({ blockhash }) => {
-        transaction.recentBlockhash = blockhash;
-        return resolve(transaction);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  _addRecentCommitment = async (transaction) => {
+    const { blockhash } = await this.connection.getRecentBlockhash('recent');
+    transaction.recentBlockhash = blockhash;
+    return transaction;
   }
 
   _addSignature = (transaction, { publicKey, signature }) => {
@@ -62,62 +49,47 @@ class Tx {
    * @param {*} newAccount 
    * @param {*} space 
    * @param {*} programId 
-   * @returns Promise
-   * Promise.resolve(bool)
-   *   true - is not rented
-   *   false - is rented but not initialized
-   * Promise.reject()
+   * @returns bool
+   *   true - not rented
+   *   false - rented but not initialized
    */
-  _isReadyForRent = (newAccount, space, programId) => {
-    return new Promise((resolve, _reject) => {
-      return this.connection.getAccountInfo(newAccount.publicKey).then(re => {
-        if (!re) return resolve(true);
-        if (!re.owner.equals(programId)) return reject('Invalid program id');
-        if (re.data.length !== space) return reject('Invalid data length');
-        if (!re.data.every(e => !e)) return reject('Account was initilized');
-        return resolve(false);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  _isReadyForRent = async (newAccount, space, programId) => {
+    const data = await this.connection.getAccountInfo(newAccount.publicKey);
+    if (!data) return true;
+    if (!data.owner.equals(programId)) throw new Error('Invalid program id');
+    if (data.data.length !== space) throw new Error('Invalid data length');
+    if (!data.data.every(e => !e)) throw new Error('Account was initilized');
+    return false;
   }
 
-  _rentAccount = (wallet, newAccount, space, programId) => {
-    return new Promise((resolve, reject) => {
-      let transaction = new Transaction();
-      let fromPubkey = null;
-      return this._isReadyForRent(newAccount, space, programId).then(rented => {
-        if (!rented) throw new Error('No error');
-        return this._addRecentCommitment(transaction);
-      }).then(txWithCommitment => {
-        transaction = txWithCommitment;
-        return wallet.getAccount();
-      }).then(payerAddress => {
-        fromPubkey = account.fromAddress(payerAddress);
-        return this.connection.getMinimumBalanceForRentExemption(space);
-      }).then(lamports => {
-        const instruction = SystemProgram.createAccount({
-          fromPubkey,
-          newAccountPubkey: newAccount.publicKey,
-          lamports,
-          space,
-          programId
-        });
-        transaction.add(instruction);
-        transaction.feePayer = fromPubkey;
-        return wallet.sign(transaction);
-      }).then(payerSig => {
-        this._addSignature(transaction, payerSig);
-        const accSig = this._sign(transaction, newAccount);
-        this._addSignature(transaction, accSig);
-        return this._sendTransaction(transaction);
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        if (er.message === 'No error') return resolve();
-        return reject(er);
-      });
+  _rentAccount = async (wallet, newAccount, space, programId) => {
+    // Get payer
+    const payerAddress = await wallet.getAccount();
+    const fromPubkey = account.fromAddress(payerAddress);
+    // Validate account
+    const notRented = await this._isReadyForRent(newAccount, space, programId);
+    if (!notRented) return null;
+    // Build tx
+    let transaction = new Transaction();
+    transaction = await this._addRecentCommitment(transaction);
+    const lamports = await this.connection.getMinimumBalanceForRentExemption(space);
+    const instruction = SystemProgram.createAccount({
+      fromPubkey,
+      newAccountPubkey: newAccount.publicKey,
+      lamports,
+      space,
+      programId
     });
+    transaction.add(instruction);
+    transaction.feePayer = fromPubkey;
+    // Sign tx
+    const payerSig = await wallet.sign(transaction);
+    this._addSignature(transaction, payerSig);
+    const accSig = this._sign(transaction, newAccount);
+    this._addSignature(transaction, accSig);
+    // Send tx
+    const txId = this._sendTransaction(transaction);
+    return txId;
   }
 }
 

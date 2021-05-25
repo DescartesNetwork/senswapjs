@@ -13,7 +13,7 @@ let MULTISIG_ADDRESS = 'J57UhhZe5xpc3oje11aj8QFjAAZVgg4hWxbpLgJnVxyN';
 
 
 describe('SPLT library', function () {
-  it('Mint', function (done) {
+  it('Mint', async function () {
     const mint = createAccount();
     const src = createAccount();
     const dst = createAccount();
@@ -21,321 +21,201 @@ describe('SPLT library', function () {
     SRC_ADDRESS = src.publicKey.toBase58();
     DST_ADDRESS = dst.publicKey.toBase58();
     const splt = new SPLT();
-    payer.getAccount().then(payerAddress => {
-      return splt.initializeMint(9, payerAddress, null, mint, payer);
-    }).then(txId => {
-      return splt.initializeAccount(src, MINT_ADDRESS, payer);
-    }).then(txId => {
-      return splt.mintTo(5000000000000000000n, MINT_ADDRESS, SRC_ADDRESS, payer);
-    }).then(txId => {
-      return splt.initializeAccount(dst, MINT_ADDRESS, payer);
-    }).then(txId => {
-      return done();
-    }).catch(er => {
-      return done(er);
-    });
+    const payerAddress = await payer.getAccount();
+    await splt.initializeMint(9, payerAddress, null, mint, payer);
+    await splt.initializeAccount(src, MINT_ADDRESS, payer);
+    await splt.mintTo(5000000000000000000n, MINT_ADDRESS, SRC_ADDRESS, payer);
+    await splt.initializeAccount(dst, MINT_ADDRESS, payer);
   });
 
   describe('Test constructor', function () {
-    it('Should fill configs', function (done) {
+    it('Should fill configs', async function () {
       // Mint
       console.log('MINT_ADDRESS:', MINT_ADDRESS);
       console.log('SRC_ADDRESS:', SRC_ADDRESS);
       console.log('DST_ADDRESS:', DST_ADDRESS);
       console.log('\n');
-      return done();
     });
 
 
-    it('Should be a valid default in constructor', function (done) {
-      try {
-        const splt = new SPLT();
-        return done();
-      } catch (er) {
-        return done(er);
-      }
+    it('Should be a valid default in constructor', async function () {
+      new SPLT();
     });
 
-    it('Should be a valid address in constructor', function (done) {
-      try {
-        const splt = new SPLT('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
-        return done();
-      } catch (er) {
-        return done(er);
-      }
+    it('Should be a valid address in constructor', async function () {
+      new SPLT('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
     });
 
-    it('Should be an invalid address in constructor', function (done) {
+    it('Should be an invalid address in constructor', async function () {
       try {
-        const splt = new SPLT('abc');
-        return done('An invalid address is skipped');
+        new SPLT('abc');
       } catch (er) {
-        return done();
+        return;
       }
+      throw new Error('An invalid address is skipped');
     });
   });
 
   describe('Test Mint', function () {
-    it('Should be a valid mint data', function (done) {
+    it('Should be a valid mint data', async function () {
       const splt = new SPLT();
-      splt.getMintData(MINT_ADDRESS).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await splt.getMintData(MINT_ADDRESS);
     });
 
-    it('Should initialize Mint', function (done) {
+    it('Should initialize Mint', async function () {
       const splt = new SPLT();
       const mint = createAccount();
       const freezeAuthorityAddress = null; // Unset freeze authority
-      payer.getAccount().then(payerAddress => {
-        return splt.initializeMint(9, payerAddress, freezeAuthorityAddress, mint, payer);
-      }).then(txId => {
-        return splt.getMintData(mint.publicKey.toBase58());
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      const payerAddress = await payer.getAccount();
+      await splt.initializeMint(9, payerAddress, freezeAuthorityAddress, mint, payer);
+      await splt.getMintData(mint.publicKey.toBase58());
     });
 
-    it('Should mint', function (done) {
+    it('Should mint', async function () {
       const splt = new SPLT();
       const amount = 10000000000000n;
-      splt.mintTo(amount, MINT_ADDRESS, SRC_ADDRESS, payer).then(txId => {
-        return splt.getAccountData(SRC_ADDRESS);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await splt.mintTo(amount, MINT_ADDRESS, SRC_ADDRESS, payer);
+      await splt.getAccountData(SRC_ADDRESS);
     });
 
-    it('Should burn', function (done) {
+    it('Should burn', async function () {
       const splt = new SPLT();
       const amount = 5000000000000n;
-      splt.burn(amount, SRC_ADDRESS, MINT_ADDRESS, payer).then(txId => {
-        return splt.getAccountData(SRC_ADDRESS);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await splt.burn(amount, SRC_ADDRESS, MINT_ADDRESS, payer);
+      await splt.getAccountData(SRC_ADDRESS);
     });
 
-    it('Should not set authority (to mint)', function (done) {
+    it('Should not set authority (to mint)', async function () {
       const splt = new SPLT();
       const authorityType = AuthorityType.FreezeAccount;
-      payer.getAccount().then(newFreezeAuthorityAddress => {
-        return splt.setAuthority(authorityType, newFreezeAuthorityAddress, MINT_ADDRESS, payer);
-      }).then(txId => {
-        return done('An invalid action is skipped');
-      }).catch(er => {
-        return done();
-      });
+      const newFreezeAuthorityAddress = await payer.getAccount();
+      try {
+        await splt.setAuthority(authorityType, newFreezeAuthorityAddress, MINT_ADDRESS, payer);
+      } catch (er) {
+        return;
+      }
+      throw new Error('An invalid action is skipped');
     });
 
-    it('Should initialize/set/unset authority (to mint)', function (done) {
+    it('Should initialize/set/unset authority (to mint)', async function () {
       const splt = new SPLT();
       const mint = createAccount();
       const authorityType = AuthorityType.FreezeAccount;
       const mintAddress = mint.publicKey.toBase58();
-      payer.getAccount().then(payerAddress => {
-        return splt.initializeMint(9, payerAddress, payerAddress, mint, payer);
-      }).then(txId => {
-        return delegate.getAccount();
-      }).then(newFreezeAuthorityAddress => {
-        return splt.setAuthority(authorityType, newFreezeAuthorityAddress, mintAddress, payer);
-      }).then(txId => {
-        return splt.setAuthority(authorityType, null, mintAddress, delegate);
-      }).then(txId => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      const payerAddress = await payer.getAccount();
+      await splt.initializeMint(9, payerAddress, payerAddress, mint, payer);
+      const newFreezeAuthorityAddress = await delegate.getAccount();
+      await splt.setAuthority(authorityType, newFreezeAuthorityAddress, mintAddress, payer);
+      await splt.setAuthority(authorityType, null, mintAddress, delegate);
     });
   });
 
   describe('Test Account', function () {
-    it('Should be a valid account data', function (done) {
+    it('Should be a valid account data', async function () {
       const splt = new SPLT();
-      splt.getAccountData(SRC_ADDRESS).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await splt.getAccountData(SRC_ADDRESS);
     });
 
-    it('Should initialize/close Account (associated)', function (done) {
+    it('Should initialize/close Account (associated)', async function () {
       const lamports = new Lamports();
       const splt = new SPLT();
       const targetAccount = createAccount();
       const targetWallet = new Wallet(Buffer.from(targetAccount.secretKey).toString('hex'));
-      let newAddress = null;
-      lamports.transfer(10000000, targetAccount.publicKey.toBase58(), payer).then(txId => {
-        return deriveAssociatedAddress(
-          targetAccount.publicKey.toBase58(),
-          MINT_ADDRESS,
-          splt.spltProgramId.toBase58(),
-          splt.splataProgramId.toBase58()
-        );
-      }).then(accountAddress => {
-        newAddress = accountAddress;
-        return splt.initializeAccount(accountAddress, MINT_ADDRESS, targetWallet);
-      }).then(txId => {
-        return splt.getAccountData(newAddress);
-      }).then(data => {
-        return splt.closeAccount(newAddress, targetWallet);
-      }).then(txId => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await lamports.transfer(10000000, targetAccount.publicKey.toBase58(), payer);
+      const newAddress = await deriveAssociatedAddress(
+        targetAccount.publicKey.toBase58(),
+        MINT_ADDRESS,
+        splt.spltProgramId.toBase58(),
+        splt.splataProgramId.toBase58()
+      );
+      await splt.initializeAccount(newAddress, MINT_ADDRESS, targetWallet);
+      await splt.getAccountData(newAddress);
+      await splt.closeAccount(newAddress, targetWallet);
     });
 
-    it('Should initialize/close Account (arbitrary)', function (done) {
+    it('Should initialize/close Account (arbitrary)', async function () {
       const splt = new SPLT();
       const newAccount = createAccount();
-      splt.initializeAccount(newAccount, MINT_ADDRESS, payer).then(txId => {
-        return splt.getAccountData(newAccount.publicKey.toBase58());
-      }).then(data => {
-        return splt.closeAccount(newAccount.publicKey.toBase58(), payer);
-      }).then(txId => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await splt.initializeAccount(newAccount, MINT_ADDRESS, payer);
+      await splt.getAccountData(newAccount.publicKey.toBase58());
+      await splt.closeAccount(newAccount.publicKey.toBase58(), payer);
     });
 
-    it('Should transfer (from owner)', function (done) {
+    it('Should transfer (from owner)', async function () {
       const splt = new SPLT();
       const amount = 10000000000n;
-      splt.transfer(amount, SRC_ADDRESS, DST_ADDRESS, payer).then(txId => {
-        return splt.getAccountData(SRC_ADDRESS);
-      }).then(data => {
-        return splt.getAccountData(DST_ADDRESS);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await splt.transfer(amount, SRC_ADDRESS, DST_ADDRESS, payer);
+      await splt.getAccountData(SRC_ADDRESS);
+      await splt.getAccountData(DST_ADDRESS);
     });
 
-    it('Should approve', function (done) {
+    it('Should approve', async function () {
       const splt = new SPLT();
       const amount = 10000000000n;
-      delegate.getAccount().then(delegateAddress => {
-        return splt.approve(amount, SRC_ADDRESS, delegateAddress, payer);
-      }).then(txId => {
-        return splt.getAccountData(SRC_ADDRESS);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      const delegateAddress = await delegate.getAccount();
+      await splt.approve(amount, SRC_ADDRESS, delegateAddress, payer);
+      await splt.getAccountData(SRC_ADDRESS);
     });
 
-    it('Should transfer (from delegate)', function (done) {
+    it('Should transfer (from delegate)', async function () {
       const splt = new SPLT();
       const amount = 5000000000n;
-      splt.transfer(amount, SRC_ADDRESS, DST_ADDRESS, delegate).then(txId => {
-        return splt.getAccountData(SRC_ADDRESS);
-      }).then(data => {
-        return splt.getAccountData(DST_ADDRESS);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await splt.transfer(amount, SRC_ADDRESS, DST_ADDRESS, delegate);
+      await splt.getAccountData(SRC_ADDRESS);
+      await splt.getAccountData(DST_ADDRESS);
     });
 
-    it('Should revoke', function (done) {
+    it('Should revoke', async function () {
       const splt = new SPLT();
-      splt.revoke(SRC_ADDRESS, payer).then(txId => {
-        return splt.getAccountData(SRC_ADDRESS);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await splt.revoke(SRC_ADDRESS, payer);
+      await splt.getAccountData(SRC_ADDRESS);
     });
 
-    it('Should set authority (to account)', function (done) {
+    it('Should set authority (to account)', async function () {
       const splt = new SPLT();
       const authorityType = AuthorityType.CloseAccount;
-      payer.getAccount(newAuthorityAddress => {
-        return splt.setAuthority(authorityType, newAuthorityAddress, SRC_ADDRESS, payer);
-      }).then(txId => {
-        return splt.getAccountData(SRC_ADDRESS);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      const newAuthorityAddress = await payer.getAccount();
+      await splt.setAuthority(authorityType, newAuthorityAddress, SRC_ADDRESS, payer);
+      await splt.getAccountData(SRC_ADDRESS);
     });
 
-    it('Should unset authority', function (done) {
+    it('Should unset authority', async function () {
       const splt = new SPLT();
       const authorityType = AuthorityType.CloseAccount;
-      splt.setAuthority(authorityType, null, SRC_ADDRESS, payer).then(txId => {
-        return splt.getAccountData(SRC_ADDRESS);
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await splt.setAuthority(authorityType, null, SRC_ADDRESS, payer);
+      await splt.getAccountData(SRC_ADDRESS);
     });
 
-    it('Should freeze/thaw account', function (done) {
+    it('Should freeze/thaw account', async function () {
       const splt = new SPLT();
       const newAccount = createAccount();
       const mint = createAccount();
       const accountAddress = newAccount.publicKey.toBase58();
       const mintAddress = mint.publicKey.toBase58();
-      payer.getAccount().then(payerAddress => {
-        return splt.initializeMint(9, payerAddress, payerAddress, mint, payer);
-      }).then(txId => {
-        return splt.initializeAccount(newAccount, mintAddress, payer);
-      }).then(txId => {
-        return splt.freezeAccount(accountAddress, mintAddress, payer);
-      }).then(txId => {
-        return splt.thawAccount(accountAddress, mintAddress, payer);
-      }).then(txId => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      const payerAddress = await payer.getAccount();
+      await splt.initializeMint(9, payerAddress, payerAddress, mint, payer);
+      await splt.initializeAccount(newAccount, mintAddress, payer);
+      await splt.freezeAccount(accountAddress, mintAddress, payer);
+      await splt.thawAccount(accountAddress, mintAddress, payer);
     });
   });
 
   describe('Test MultiSig', function () {
-    it('Should be a valid mint data', function (done) {
+    it('Should be a valid mint data', async function () {
       const splt = new SPLT();
-      splt.getMultiSigData(MULTISIG_ADDRESS).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      await splt.getMultiSigData(MULTISIG_ADDRESS);
     });
 
-    it('Should initialize MultiSig', function (done) {
+    it('Should initialize MultiSig', async function () {
       const splt = new SPLT();
       const multiSig = createAccount();
       const signerAddresses = [];
-      payer.getAccount().then(payerAddress => {
-        signerAddresses.push(payerAddress);
-        return delegate.getAccount();
-      }).then(delegateAddress => {
-        signerAddresses.push(delegateAddress);
-        return splt.initializeMultiSig(2, signerAddresses, multiSig, payer);
-      }).then(txId => {
-        return splt.getMultiSigData(multiSig.publicKey.toBase58());
-      }).then(data => {
-        return done();
-      }).catch(er => {
-        return done(er);
-      });
+      const payerAddress = await payer.getAccount();
+      signerAddresses.push(payerAddress);
+      const delegateAddress = await delegate.getAccount();
+      signerAddresses.push(delegateAddress);
+      await splt.initializeMultiSig(2, signerAddresses, multiSig, payer);
+      await splt.getMultiSigData(multiSig.publicKey.toBase58());
     });
   });
 
