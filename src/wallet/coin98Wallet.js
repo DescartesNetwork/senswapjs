@@ -35,7 +35,7 @@ class Coin98Wallet extends WalletInterface {
     const node = this._getNode();
     const acc = await this.getAccount();
     transaction.feePayer = account.fromAddress(acc);
-    const { publicKey, signature } = await node.request({ method: 'sol_sign', params: [transaction] });
+    let { publicKey, signature } = await node.request({ method: 'sol_sign', params: [transaction] });
     publicKey = account.fromAddress(publicKey);
     signature = bs58.decode(signature);
     return { publicKey, signature }

@@ -17,26 +17,22 @@ class WalletInterface {
 
   getAccount = async () => {
     if (!this._getAccount) throw new Error('Wallet is not connected');
-    const account = await this._getAccount();
-    return account;
+    return await this._getAccount();
   }
 
   sign = async (transaction) => {
     if (!this._sign) throw new Error('Wallet is not connected');
-    const re = await this._sign(transaction);
-    return re;
+    return await this._sign(transaction);
   }
 
   certify = async (message) => {
     if (!this._certify) throw new Error('Wallet is not connected');
-    const re = await this._certify(message);
-    return re;
+    return await this._certify(message);
   }
 
   verify = async (signature, message = null) => {
     if (!this._verify) throw new Error('Wallet is not connected');
-    const re = await this._verify(signature, message);
-    return re;
+    return await this._verify(signature, message);
   }
 }
 
