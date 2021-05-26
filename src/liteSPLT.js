@@ -20,79 +20,71 @@ class LiteSPLT {
   watch = (callback) => {
     return this._splt.watch(callback);
   }
-  getMintData = (mintAddress) => {
-    return this._splt.getMintData(mintAddress);
+  getMintData = async (mintAddress) => {
+    return await this._splt.getMintData(mintAddress);
   }
-  getAccountData = (accountAddress) => {
-    return this._splt.getAccountData(accountAddress);
+  getAccountData = async (accountAddress) => {
+    return await this._splt.getAccountData(accountAddress);
   }
-  getMultiSigData = (multiSigAddress) => {
-    return this._splt.getMultiSigData(multiSigAddress);
-  }
-
-  initializeMint = (decimals, mintAuthorityAddress, freezeAuthorityAddress, mint, wallet) => {
-    return this._splt.initializeMint(decimals, mintAuthorityAddress, freezeAuthorityAddress, mint, wallet);
+  getMultiSigData = async (multiSigAddress) => {
+    return await this._splt.getMultiSigData(multiSigAddress);
   }
 
-  initializeAccount = (mintAddress, wallet, ownerAddress = null) => {
-    return new Promise((resolve, reject) => {
-      let accountAddress = null;
-      return wallet.getAccount().then(walletAddress => {
-        return deriveAssociatedAddress(
-          ownerAddress || walletAddress,
-          mintAddress,
-          this._splt.spltProgramId.toBase58(),
-          this._splt.splataProgramId.toBase58(),
-        );
-      }).then(associatedAccountAddress => {
-        accountAddress = associatedAccountAddress;
-        return this._splt.initializeAccount(associatedAccountAddress, mintAddress, wallet, ownerAddress);
-      }).then(txId => {
-        return resolve({ accountAddress, txId });
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  initializeMint = async (decimals, mintAuthorityAddress, freezeAuthorityAddress, mint, wallet) => {
+    return await this._splt.initializeMint(decimals, mintAuthorityAddress, freezeAuthorityAddress, mint, wallet);
   }
 
-  initializeMultiSig = (minimumSig, signerAddresses, multiSig, wallet) => {
-    return this._splt.initializeMultiSig(minimumSig, signerAddresses, multiSig, wallet);
+  initializeAccount = async (mintAddress, wallet, ownerAddress = null) => {
+    // Get payer
+    const payerAddress = await wallet.getAccount();
+    const accountAddress = await deriveAssociatedAddress(
+      ownerAddress || payerAddress,
+      mintAddress,
+      this._splt.spltProgramId.toBase58(),
+      this._splt.splataProgramId.toBase58(),
+    );
+    const txId = await this._splt.initializeAccount(accountAddress, mintAddress, wallet, ownerAddress);
+    return { accountAddress, txId }
   }
 
-  transfer = (amount, srcAddress, dstAddress, wallet) => {
-    return this._splt.transfer(amount, srcAddress, dstAddress, wallet);
+  initializeMultiSig = async (minimumSig, signerAddresses, multiSig, wallet) => {
+    return await this._splt.initializeMultiSig(minimumSig, signerAddresses, multiSig, wallet);
   }
 
-  approve = (amount, srcAddress, delegateAddress, wallet) => {
-    return this._splt.approve(amount, srcAddress, delegateAddress, wallet);
+  transfer = async (amount, srcAddress, dstAddress, wallet) => {
+    return await this._splt.transfer(amount, srcAddress, dstAddress, wallet);
   }
 
-  revoke = (srcAddress, wallet) => {
-    return this._splt.revoke(srcAddress, wallet);
+  approve = async (amount, srcAddress, delegateAddress, wallet) => {
+    return await this._splt.approve(amount, srcAddress, delegateAddress, wallet);
   }
 
-  setAuthority = (authorityType, newAuthorityAddress, targetAddress, wallet) => {
-    return this._splt.setAuthority(authorityType, newAuthorityAddress, targetAddress, wallet);
+  revoke = async (srcAddress, wallet) => {
+    return await this._splt.revoke(srcAddress, wallet);
   }
 
-  mintTo = (amount, mintAddress, dstAddress, wallet) => {
-    return this._splt.mintTo(amount, mintAddress, dstAddress, wallet);
+  setAuthority = async (authorityType, newAuthorityAddress, targetAddress, wallet) => {
+    return await this._splt.setAuthority(authorityType, newAuthorityAddress, targetAddress, wallet);
   }
 
-  burn = (amount, srcAddress, mintAddress, wallet) => {
-    return this._splt.burn(amount, srcAddress, mintAddress, wallet);
+  mintTo = async (amount, mintAddress, dstAddress, wallet) => {
+    return await this._splt.mintTo(amount, mintAddress, dstAddress, wallet);
   }
 
-  closeAccount = (targetAccount, wallet) => {
-    return this._splt.closeAccount(targetAccount, wallet);
+  burn = async (amount, srcAddress, mintAddress, wallet) => {
+    return await this._splt.burn(amount, srcAddress, mintAddress, wallet);
   }
 
-  freezeAccount = (targetAddress, mintAddress, wallet) => {
-    return this._splt.freezeAccount(targetAddress, mintAddress, wallet);
+  closeAccount = async (targetAccount, wallet) => {
+    return await this._splt.closeAccount(targetAccount, wallet);
   }
 
-  thawAccount = (targetAddress, mintAddress, wallet) => {
-    return this._splt.thawAccount(targetAddress, mintAddress, wallet);
+  freezeAccount = async (targetAddress, mintAddress, wallet) => {
+    return await this._splt.freezeAccount(targetAddress, mintAddress, wallet);
+  }
+
+  thawAccount = async (targetAddress, mintAddress, wallet) => {
+    return await this._splt.thawAccount(targetAddress, mintAddress, wallet);
   }
 }
 

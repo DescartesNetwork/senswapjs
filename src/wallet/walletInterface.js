@@ -4,60 +4,39 @@ class WalletInterface {
     this._sign = null;
   }
 
-  isConnected = () => {
-    return new Promise((resolve, _reject) => {
-      return this.getAccount().then(account => {
-        if (!account) return resolve(false);
-        return resolve(true);
-      }).catch(er => {
-        console.warn(er);
-        return resolve(false);
-      });
-    });
+  isConnected = async () => {
+    try {
+      const account = await this.getAccount();
+      if (!account) return false;
+      return true;
+    } catch (er) {
+      console.warn(er);
+      return false;
+    }
   }
 
-  getAccount = () => {
-    return new Promise((resolve, reject) => {
-      if (!this._getAccount) return reject('Wallet is not connected');
-      return this._getAccount().then(account => {
-        return resolve(account);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  getAccount = async () => {
+    if (!this._getAccount) throw new Error('Wallet is not connected');
+    const account = await this._getAccount();
+    return account;
   }
 
-  sign = (transaction) => {
-    return new Promise((resolve, reject) => {
-      if (!this._sign) return reject('Wallet is not connected');
-      return this._sign(transaction).then(re => {
-        return resolve(re);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  sign = async (transaction) => {
+    if (!this._sign) throw new Error('Wallet is not connected');
+    const re = await this._sign(transaction);
+    return re;
   }
 
-  certify = (message) => {
-    return new Promise((resolve, reject) => {
-      if (!this._certify) return reject('Wallet is not connected');
-      return this._certify(message).then(re => {
-        return resolve(re);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  certify = async (message) => {
+    if (!this._certify) throw new Error('Wallet is not connected');
+    const re = await this._certify(message);
+    return re;
   }
 
-  verify = (signature, message = null) => {
-    return new Promise((resolve, reject) => {
-      if (!this._verify) return reject('Wallet is not connected');
-      return this._verify(signature, message).then(re => {
-        return resolve(re);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  verify = async (signature, message = null) => {
+    if (!this._verify) throw new Error('Wallet is not connected');
+    const re = await this._verify(signature, message);
+    return re;
   }
 }
 

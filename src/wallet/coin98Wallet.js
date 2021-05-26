@@ -23,56 +23,34 @@ class Coin98Wallet extends WalletInterface {
     return sol;
   }
 
-  _getAccount = () => {
-    return new Promise((resolve, reject) => {
-      const node = this._getNode();
-      return node.request({ method: 'sol_accounts' }).then(re => {
-        const [acc] = re || [];
-        if (!acc) return reject('There is no Solana account');
-        return resolve(acc);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  _getAccount = async () => {
+    const node = this._getNode();
+    const re = await node.request({ method: 'sol_accounts' });
+    const [acc] = re || [];
+    if (!acc) throw new Error('There is no Solana account');
+    return acc;
   }
 
-  _sign = (transaction) => {
-    return new Promise((resolve, reject) => {
-      const node = this._getNode();
-      return this.getAccount().then(acc => {
-        transaction.feePayer = account.fromAddress(acc);
-        return node.request({ method: 'sol_sign', params: [transaction] })
-      }).then(({ publicKey, signature }) => {
-        publicKey = account.fromAddress(publicKey);
-        signature = bs58.decode(signature);
-        return resolve({ publicKey, signature });
-      }).catch(er => {
-        return reject(er.message);
-      });
-    });
+  _sign = async (transaction) => {
+    const node = this._getNode();
+    const acc = await this.getAccount();
+    transaction.feePayer = account.fromAddress(acc);
+    const { publicKey, signature } = await node.request({ method: 'sol_sign', params: [transaction] });
+    publicKey = account.fromAddress(publicKey);
+    signature = bs58.decode(signature);
+    return { publicKey, signature }
   }
 
-  _certify = (msg) => {
-    return new Promise((resolve, reject) => {
-      const node = this._getNode();
-      return node.request({ method: 'sol_sign', params: [msg] }).then(data => {
-        return resolve(data);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  _certify = async (msg) => {
+    const node = this._getNode();
+    const data = await node.request({ method: 'sol_sign', params: [msg] });
+    return data;
   }
 
-  _verify = (sig, msg = null) => {
-    return new Promise((resolve, reject) => {
-      return this._getAccount().then(addr => {
-        return account.verify(addr, sig, msg);
-      }).then(data => {
-        return resolve(data);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  _verify = async (sig, msg = null) => {
+    const addr = await this._getAccount();
+    const data = await account.verify(addr, sig, msg);
+    return data;
   }
 }
 

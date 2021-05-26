@@ -43,33 +43,17 @@ describe('Oracle library', function () {
     });
   });
 
-  describe('Single Rake && Multiple Rake', function () {
-    it('Should compute __rake', function (done) {
-      const [lpt, a, b] = __rake(
+  describe('Single Rake', function () {
+    it('Should compute _rake', function (done) {
+      const [s, a, b] = _rake(
         new BN(deltaS.toString()),
         new BN(reserseS.toString()),
         new BN(reserseA.toString()),
         new BN(reserseB.toString()),
       );
-      if (lpt.toString() !== '334439583') return done('Wrong __rake');
+      if (s.toString() !== '334439583') return done('Wrong __rake');
       if (a.toString() !== '16556411410') return done('Wrong __rake');
       if (b.toString() !== '662256457') return done('Wrong __rake');
-      return done();
-    });
-
-    it('Should compute _rake', function (done) {
-      const [lpt, rs, ra, rb] = _rake(
-        new BN(deltaS.toString()),
-        new BN(deltaA.toString()),
-        new BN(deltaB.toString()),
-        new BN(reserseS.toString()),
-        new BN(reserseA.toString()),
-        new BN(reserseB.toString()),
-      );
-      if (lpt.toString() !== '847910833') return done('Wrong __rake');
-      if (rs.toString() !== '101000000000') return done('Wrong __rake');
-      if (ra.toString() !== '5002000000000') return done('Wrong __rake');
-      if (rb.toString() !== '203000000000') return done('Wrong __rake');
       return done();
     });
   });
@@ -89,7 +73,7 @@ describe('Oracle library', function () {
 
     it('Should compute slippage', function (done) {
       const s = slippage(1000000000000n, bidReserve, askReserve, fee, feeDecimals);
-      if (s !== 1800180n) return done('Wrong slippage');
+      if (s !== 1994508n) return done('Wrong slippage');
       return done();
     });
 
@@ -99,8 +83,8 @@ describe('Oracle library', function () {
         reserseS, reserseA, reserseB,
         fee, feeDecimals
       );
-      if (lpt !== 845791056n) return done('Wrong rake');
-      if (newReserveS !== 101002119777n) return done('Wrong rake');
+      if (lpt !== 21119n) return done('Wrong rake');
+      if (newReserveS !== 101000000000n) return done('Wrong rake');
       if (newReserveA !== 5002000000000n) return done('Wrong rake');
       if (newReserveB !== 203000000000n) return done('Wrong rake');
       return done();

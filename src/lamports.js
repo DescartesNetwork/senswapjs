@@ -26,48 +26,39 @@ class Lamports extends Tx {
     });
   }
 
-  get = (address) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(address)) return reject('Invalid address');
-      const publicKey = account.fromAddress(address);
-      return this.connection.getBalance(publicKey).then(lamports => {
-        return resolve(lamports);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  get = async (address) => {
+    if (!account.isAddress(address)) throw new Error('Invalid address');
+    const publicKey = account.fromAddress(address);
+    const lamports = await this.connection.getBalance(publicKey);
+    return lamports;
   }
 
-  transfer = (lamports, dstAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      if (!account.isAddress(dstAddress)) return reject('Invalid destination address');
-
-      let transaction = new Transaction();
-      const dstPublicKey = account.fromAddress(dstAddress);
-
-      return this._addRecentCommitment(transaction).then(txWithCommitment => {
-        transaction = txWithCommitment;
-        return wallet.getAccount();
-      }).then(payerAddress => {
-        const payerPublicKey = account.fromAddress(payerAddress);
-
-        const instruction = SystemProgram.transfer({
-          fromPubkey: payerPublicKey,
-          toPubkey: dstPublicKey,
-          lamports
-        });
-        transaction.add(instruction);
-        transaction.feePayer = payerPublicKey;
-        return wallet.sign(transaction);
-      }).then(payerSig => {
-        this._addSignature(transaction, payerSig);
-        return this._sendTransaction(transaction);
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
-      });
+  transfer = async (lamports, dstAddress, wallet) => {
+    if (!account.isAddress(dstAddress)) throw new Error('Invalid destination address');
+    const dstPublicKey = account.fromAddress(dstAddress);
+    // Get payer
+    const payerAddress = await wallet.getAccount();
+    const payerPublicKey = account.fromAddress(payerAddress);
+    // Build tx
+    let transaction = new Transaction();
+    transaction = await this._addRecentCommitment(transaction);
+    const instruction = SystemProgram.transfer({
+      fromPubkey: payerPublicKey,
+      toPubkey: dstPublicKey,
+      lamports
     });
+    transaction.add(instruction);
+    transaction.feePayer = payerPublicKey;
+    // Sign tx
+    const payerSig = await wallet.sign(transaction);
+    this._addSignature(transaction, payerSig);
+    // Send tx
+    const txId = await this._sendTransaction(transaction);
+    return txId;
+  }
+
+  wrap = async (lamports, dstAddress, wallet) => {
+    // Code here
   }
 }
 

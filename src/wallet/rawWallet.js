@@ -21,52 +21,32 @@ class RawWallet extends WalletInterface {
     return acc;
   }
 
-  _getAccount = () => {
-    return new Promise((resolve, reject) => {
-      const acc = this._getWallet();
-      if (!acc || !acc.publicKey) return reject('No account');
-      const address = acc.publicKey.toBase58();
-      return resolve(address);
-    });
+  _getAccount = async () => {
+    const acc = this._getWallet();
+    if (!acc || !acc.publicKey) throw new Error('No account');
+    const address = acc.publicKey.toBase58();
+    return address;
   }
 
-  _sign = (tx) => {
-    return new Promise((resolve, reject) => {
-      try {
-        const acc = this._getWallet();
-        const signData = tx.serializeMessage();
-        const publicKey = acc.publicKey;
-        const signature = nacl.sign.detached(signData, acc.secretKey);
-        return resolve({ publicKey, signature });
-      } catch (er) {
-        return reject(er);
-      }
-    });
+  _sign = async (tx) => {
+    const acc = this._getWallet();
+    const signData = tx.serializeMessage();
+    const publicKey = acc.publicKey;
+    const signature = nacl.sign.detached(signData, acc.secretKey);
+    return { publicKey, signature }
   }
 
-  _certify = (msg) => {
-    return new Promise((resolve, reject) => {
-      try {
-        const secretKey = storage.get('SecretKey');
-        const data = account.sign(msg, secretKey);
-        return resolve({ ...data });
-      } catch (er) {
-        return reject(er);
-      }
-    });
+  _certify = async (msg) => {
+    const secretKey = storage.get('SecretKey');
+    const data = account.sign(msg, secretKey);
+    return { ...data }
   }
 
-  _verify = (sig, msg = null) => {
-    return new Promise((resolve, reject) => {
-      try {
-        const acc = this._getWallet();
-        const addr = acc.publicKey.toBase58();
-        const data = account.verify(addr, sig, msg);
-        return resolve(data);
-      } catch (er) {
-        return reject(er);
-      }
-    });
+  _verify = async (sig, msg = null) => {
+    const acc = this._getWallet();
+    const addr = acc.publicKey.toBase58();
+    const data = account.verify(addr, sig, msg);
+    return data;
   }
 }
 

@@ -18,23 +18,18 @@ account.isAddress = (address) => {
   }
 }
 
-account.isMintLPTAddress = (mintAuthorityAddress, freezeAuthorityAddress, swapProgramAddress) => {
-  return new Promise((resolve, reject) => {
-    if (!account.isAddress(mintAuthorityAddress)) return reject('Invalid mint authority address');
-    if (!account.isAddress(freezeAuthorityAddress)) return reject('Invalid freeze authority address');
-    if (!account.isAddress(swapProgramAddress)) return reject('Invalid swap program address');
-    const mintAuthorityPublicKey = account.fromAddress(mintAuthorityAddress);
-    const freezeAuthorityPublicKey = account.fromAddress(freezeAuthorityAddress); // Proof of mint LPT
-    const swapProgramId = account.fromAddress(swapProgramAddress);
-    const poolPublicKey = new PublicKey(xor(freezeAuthorityPublicKey.toBuffer(), mintAuthorityPublicKey.toBuffer()));
-    const seed = [poolPublicKey.toBuffer()];
-    return PublicKey.createProgramAddress(seed, swapProgramId).then(treasurerPublicKey => {
-      if (treasurerPublicKey.toBase58() != mintAuthorityPublicKey.toBase58()) return resolve(null);
-      return resolve(poolPublicKey.toBase58());
-    }).catch(er => {
-      return reject(er);
-    });
-  });
+account.isMintLPTAddress = async (mintAuthorityAddress, freezeAuthorityAddress, swapProgramAddress) => {
+  if (!account.isAddress(mintAuthorityAddress)) throw new Error('Invalid mint authority address');
+  if (!account.isAddress(freezeAuthorityAddress)) throw new Error('Invalid freeze authority address');
+  if (!account.isAddress(swapProgramAddress)) throw new Error('Invalid swap program address');
+  const mintAuthorityPublicKey = account.fromAddress(mintAuthorityAddress);
+  const freezeAuthorityPublicKey = account.fromAddress(freezeAuthorityAddress); // Proof of mint LPT
+  const swapProgramId = account.fromAddress(swapProgramAddress);
+  const poolPublicKey = new PublicKey(xor(freezeAuthorityPublicKey.toBuffer(), mintAuthorityPublicKey.toBuffer()));
+  const seed = [poolPublicKey.toBuffer()];
+  const treasurerPublicKey = await PublicKey.createProgramAddress(seed, swapProgramId);
+  if (treasurerPublicKey.toBase58() != mintAuthorityPublicKey.toBase58()) return null;
+  return poolPublicKey.toBase58();
 }
 
 account.createAccount = () => {
@@ -86,35 +81,29 @@ account.createPrefixedAccount = (prefix, callback = (a, c) => { }, loose = true)
   });
 }
 
-account.deriveAssociatedAddress = (
+account.deriveAssociatedAddress = async (
   walletAddress,
   mintAddress,
   spltPromgramAddress,
   splataProgramAddress
 ) => {
-  return new Promise((resolve, reject) => {
-    if (!account.isAddress(walletAddress)) return reject('Invalid wallet address');
-    if (!account.isAddress(mintAddress)) return reject('Invalid mint address');
-    if (!account.isAddress(spltPromgramAddress)) return reject('Invalid SPL token address');
-    if (!account.isAddress(splataProgramAddress)) return reject('Invalid SPL associated token account address');
-    const walletPublicKey = account.fromAddress(walletAddress);
-    const mintPublicKey = account.fromAddress(mintAddress);
-    const spltPublicKey = account.fromAddress(spltPromgramAddress);
-    const splataPublicKey = account.fromAddress(splataProgramAddress);
-
-    return PublicKey.findProgramAddress(
-      [
-        walletPublicKey.toBuffer(),
-        spltPublicKey.toBuffer(),
-        mintPublicKey.toBuffer(),
-      ],
-      splataPublicKey
-    ).then(([publicKey, _]) => {
-      return resolve(publicKey.toBase58());
-    }).catch(er => {
-      return reject(er);
-    });
-  });
+  if (!account.isAddress(walletAddress)) throw new Error('Invalid wallet address');
+  if (!account.isAddress(mintAddress)) throw new Error('Invalid mint address');
+  if (!account.isAddress(spltPromgramAddress)) throw new Error('Invalid SPL token address');
+  if (!account.isAddress(splataProgramAddress)) throw new Error('Invalid SPL associated token account address');
+  const walletPublicKey = account.fromAddress(walletAddress);
+  const mintPublicKey = account.fromAddress(mintAddress);
+  const spltPublicKey = account.fromAddress(spltPromgramAddress);
+  const splataPublicKey = account.fromAddress(splataProgramAddress);
+  const [publicKey, _] = await PublicKey.findProgramAddress(
+    [
+      walletPublicKey.toBuffer(),
+      spltPublicKey.toBuffer(),
+      mintPublicKey.toBuffer(),
+    ],
+    splataPublicKey
+  );
+  return publicKey.toBase58();
 }
 
 account.fromAddress = (address) => {

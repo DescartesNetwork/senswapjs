@@ -22,34 +22,29 @@ util.toSymbol = (symbol) => {
   return symbol.join('').replace(/\u0000/g, '').replace(/-/g, '');
 }
 
-util.parseCGK = (ticket = 'solana') => {
-  return new Promise((resolve, reject) => {
-    return axios({
-      method: 'get',
-      url: 'https://api.coingecko.com/api/v3/coins/' + ticket,
-    }).then(({ data: {
-      image: { large, small, thumb },
-      symbol: refSymbol,
-      name,
-      platforms: { solana },
-      market_cap_rank: rank,
-      market_data: {
-        current_price: { usd: price },
-        total_volume: { usd: totalVolume },
-        price_change_percentage_24h: priceChange,
-      },
-    } }) => {
-      const icon = large || thumb || small;
-      const symbol = refSymbol.toUpperCase();
-      const address = solana;
-      return resolve({
-        icon, symbol, name, address,
-        rank, price, priceChange, totalVolume
-      });
-    }).catch(er => {
-      return reject(er);
-    });
+util.parseCGK = async (ticket = '') => {
+  const { data: {
+    image: { large, small, thumb },
+    symbol: refSymbol,
+    name,
+    platforms: { solana },
+    market_cap_rank: rank,
+    market_data: {
+      current_price: { usd: price },
+      total_volume: { usd: totalVolume },
+      price_change_percentage_24h: priceChange,
+    },
+  } } = await axios({
+    method: 'get',
+    url: 'https://api.coingecko.com/api/v3/coins/' + ticket,
   });
+  const icon = large || thumb || small;
+  const symbol = refSymbol.toUpperCase();
+  const address = solana;
+  return {
+    icon, symbol, name, address,
+    rank, price, priceChange, totalVolume
+  }
 }
 
 util.salt = () => {
