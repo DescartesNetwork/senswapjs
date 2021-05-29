@@ -1,6 +1,7 @@
 const {
   SPLT, AuthorityType, createAccount,
-  deriveAssociatedAddress, Lamports, RawWallet
+  deriveAssociatedAddress, Lamports, RawWallet,
+  DEFAULT_WSOL
 } = require('../dist');
 
 const payer = new RawWallet('e06a1a17cf400f6c322e32377a9a7653eecf58f3eb0061023b743c689b43a5fa491573553e4afdcdcd1c94692a138dd2fd0dc0f6946ef798ba34ac1ad00b3720');
@@ -196,6 +197,32 @@ describe('SPLT library', function () {
       await splt.initializeAccount(newAccount, mintAddress, payer);
       await splt.freezeAccount(accountAddress, mintAddress, payer);
       await splt.thawAccount(accountAddress, mintAddress, payer);
+    });
+
+    it('Should wrap/unwrap (arbitrary account)', async function () {
+      const splt = new SPLT();
+      const newAccount = createAccount();
+      const accountAddress = newAccount.publicKey.toBase58();
+      await splt.wrap(10 ** 7, newAccount, payer);
+      await splt.getAccountData(accountAddress);
+      await splt.unwrap(accountAddress, payer);
+    });
+
+    it('Should wrap/unwrap (associated account)', async function () {
+      const lamports = new Lamports();
+      const splt = new SPLT();
+      const targetAccount = createAccount();
+      const targetWallet = new RawWallet(Buffer.from(targetAccount.secretKey).toString('hex'));
+      await lamports.transfer(20000000, targetAccount.publicKey.toBase58(), payer);
+      const newAddress = await deriveAssociatedAddress(
+        targetAccount.publicKey.toBase58(),
+        DEFAULT_WSOL,
+        splt.spltProgramId.toBase58(),
+        splt.splataProgramId.toBase58()
+      );
+      await splt.wrap(10 ** 7, newAddress, targetWallet);
+      await splt.getAccountData(newAddress);
+      await splt.unwrap(newAddress, targetWallet);
     });
   });
 

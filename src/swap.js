@@ -11,7 +11,7 @@ const {
   DEFAULT_SPLT_PROGRAM_ADDRESS,
   DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS,
   DEFAULT_EMPTY_ADDRESSS
-} = require('./default');
+} = require('./defaults');
 
 class Swap extends Tx {
   constructor(

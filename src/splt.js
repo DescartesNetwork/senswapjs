@@ -7,11 +7,13 @@ const soproxABI = require('soprox-abi');
 const Tx = require('./core/tx');
 const account = require('./account');
 const schema = require('./schema');
+const Lamports = require('./lamports');
 const {
   DEFAULT_SPLT_PROGRAM_ADDRESS,
   DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS,
-  DEFAULT_EMPTY_ADDRESSS
-} = require('./default');
+  DEFAULT_EMPTY_ADDRESSS,
+  DEFAULT_WSOL,
+} = require('./defaults');
 
 const AuthorityType = {
   get MintTokens() {
@@ -40,6 +42,8 @@ class SPLT extends Tx {
     if (!account.isAddress(splataProgramAddress)) throw new Error('Invalid SPL associated token program address');
     this.spltProgramId = account.fromAddress(spltProgramAddress);
     this.splataProgramId = account.fromAddress(splataProgramAddress);
+
+    this._lamports = new Lamports(nodeUrl);
   }
 
   watchAndFetch = (callback) => {
@@ -482,9 +486,9 @@ class SPLT extends Tx {
     return txId;
   }
 
-  closeAccount = async (targetAccount, wallet) => {
-    if (!account.isAddress(targetAccount)) throw new Error('Invalid target address');
-    const targetPublicKey = account.fromAddress(targetAccount);
+  closeAccount = async (targetAddress, wallet) => {
+    if (!account.isAddress(targetAddress)) throw new Error('Invalid target address');
+    const targetPublicKey = account.fromAddress(targetAddress);
     // Get payer
     const payerAddress = await wallet.getAccount();
     const payerPublicKey = account.fromAddress(payerAddress);
@@ -571,6 +575,58 @@ class SPLT extends Tx {
     // Send tx
     const txId = await this._sendTransaction(transaction);
     return txId;
+  }
+
+  wrap = async (lamports, accountOrAddress, wallet, ownerAddress = null) => {
+    // Validate account/address
+    if (!accountOrAddress) throw new Error('Invalid token account/address');
+    // Validate space
+    const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
+    const requiredLamports = await this.connection.getMinimumBalanceForRentExemption(accountSpace);
+    if (requiredLamports > lamports) throw new Error(`At least ${requiredLamports} is required`);
+    // Call wrap
+    const _wrap = account.isAddress(accountOrAddress) ? this._wrapAssociatedAccount : this._wrapArbitraryAccount;
+    const payerAddress = await wallet.getAccount();
+    const txId = await _wrap(lamports, accountOrAddress, ownerAddress || payerAddress, wallet);
+    return txId;
+  }
+
+  _wrapArbitraryAccount = async (lamports, newAccount, ownerAddress, wallet) => {
+    // Get payer
+    const payerAddress = await wallet.getAccount();
+    const payerPublicKey = account.fromAddress(payerAddress);
+    // Build tx
+    let transaction = new Transaction();
+    transaction = await this._addRecentCommitment(transaction);
+    const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
+    const instruction = SystemProgram.createAccount({
+      fromPubkey: payerPublicKey,
+      newAccountPubkey: newAccount.publicKey,
+      lamports,
+      space: accountSpace,
+      programId: this.spltProgramId
+    });
+    transaction.add(instruction);
+    transaction.feePayer = payerPublicKey;
+    // Sign tx
+    const payerSig = await wallet.sign(transaction);
+    this._addSignature(transaction, payerSig);
+    const accSig = this._selfSign(transaction, newAccount);
+    this._addSignature(transaction, accSig);
+    // Send tx
+    await this._sendTransaction(transaction);
+    const txId = await this.initializeAccount(newAccount, DEFAULT_WSOL, wallet, ownerAddress);
+    return txId;
+  }
+
+  _wrapAssociatedAccount = async (lamports, accountAddress, ownerAddress, wallet) => {
+    await this._lamports.transfer(lamports, accountAddress, wallet);
+    const txId = await this.initializeAccount(accountAddress, DEFAULT_WSOL, wallet, ownerAddress);
+    return txId;
+  }
+
+  unwrap = async (targetAddress, wallet) => {
+    return await this.closeAccount(targetAddress, wallet);
   }
 }
 

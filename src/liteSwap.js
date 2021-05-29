@@ -4,7 +4,7 @@ const {
   DEFAULT_SWAP_PROGRAM_ADDRESS,
   DEFAULT_SPLT_PROGRAM_ADDRESS,
   DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS
-} = require('./default');
+} = require('./defaults');
 
 
 class LiteSwap {

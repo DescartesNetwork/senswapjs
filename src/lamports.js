@@ -56,10 +56,6 @@ class Lamports extends Tx {
     const txId = await this._sendTransaction(transaction);
     return txId;
   }
-
-  wrap = async (lamports, dstAddress, wallet) => {
-    // Code here
-  }
 }
 
 module.exports = Lamports;

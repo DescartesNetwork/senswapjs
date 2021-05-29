@@ -1,4 +1,5 @@
 const account = require('./account');
+const defaults = require('./defaults');
 const math = require('./math');
 const keystore = require('./keystore');
 const hdkey = require('./hdkey');
@@ -18,6 +19,7 @@ const {
 
 module.exports = {
   account, ...account,
+  defaults, ...defaults,
   math, ...math,
   keystore, ...keystore,
   hdkey, ...hdkey,

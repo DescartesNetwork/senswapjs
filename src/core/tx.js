@@ -56,6 +56,7 @@ class Tx {
   _isReadyForRent = async (newAccount, space, programId) => {
     const data = await this.connection.getAccountInfo(newAccount.publicKey);
     if (!data) return true;
+    if (data.owner.equals(SystemProgram.programId)) return true;
     if (!data.owner.equals(programId)) throw new Error('Invalid program id');
     if (data.data.length !== space) throw new Error('Invalid data length');
     if (!data.data.every(e => !e)) throw new Error('Account was initilized');

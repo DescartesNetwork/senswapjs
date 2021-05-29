@@ -2,8 +2,9 @@ import { SPLT } from './splt';
 const { deriveAssociatedAddress } = require('./account');
 const {
   DEFAULT_SPLT_PROGRAM_ADDRESS,
-  DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS
-} = require('./default');
+  DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS,
+  DEFAULT_WSOL,
+} = require('./defaults');
 
 class LiteSPLT {
   constructor(
@@ -85,6 +86,23 @@ class LiteSPLT {
 
   thawAccount = async (targetAddress, mintAddress, wallet) => {
     return await this._splt.thawAccount(targetAddress, mintAddress, wallet);
+  }
+
+  wrap = async (lamports, wallet, ownerAddress = null) => {
+    // Get payer
+    const payerAddress = await wallet.getAccount();
+    const accountAddress = await deriveAssociatedAddress(
+      ownerAddress || payerAddress,
+      DEFAULT_WSOL,
+      this._splt.spltProgramId.toBase58(),
+      this._splt.splataProgramId.toBase58(),
+    );
+    const txId = await this._splt.wrap(lamports, accountAddress, wallet, ownerAddress);
+    return { accountAddress, txId }
+  }
+
+  unwrap = async (targetAddress, wallet) => {
+    return await this._splt.unwrap(targetAddress, wallet);
   }
 }
 
