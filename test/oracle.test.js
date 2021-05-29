@@ -1,7 +1,7 @@
 const BN = require('bn.js');
 const {
   _curve, curve, _inverseCurve, inverseCurve, slippage,
-  __rake, _rake, rake,
+  _rake, rake,
 } = require('../dist');
 
 const fee = 2500000n;

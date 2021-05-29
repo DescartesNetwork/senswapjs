@@ -1,10 +1,9 @@
 const {
   createAccount, createStrictAccount, deriveAssociatedAddress,
-  Swap, SPLT
+  Swap, SPLT, RawWallet
 } = require('../dist');
-const Wallet = require('./wallet.mock');
 
-const payer = new Wallet('e06a1a17cf400f6c322e32377a9a7653eecf58f3eb0061023b743c689b43a5fa491573553e4afdcdcd1c94692a138dd2fd0dc0f6946ef798ba34ac1ad00b3720');
+const payer = new RawWallet('e06a1a17cf400f6c322e32377a9a7653eecf58f3eb0061023b743c689b43a5fa491573553e4afdcdcd1c94692a138dd2fd0dc0f6946ef798ba34ac1ad00b3720');
 // Primary Mint
 let MINT_ADDRESS_0 = '';
 let ACCOUNT_ADDRESS_0 = '';

@@ -216,17 +216,17 @@ class Swap extends Tx {
     // Sign tx
     const payerSig = await wallet.sign(transaction);
     this._addSignature(transaction, payerSig);
-    const poolSig = await this._sign(transaction, pool);
+    const poolSig = await this._selfSign(transaction, pool);
     this._addSignature(transaction, poolSig);
-    const mintLPTSig = await this._sign(transaction, mintLPT);
+    const mintLPTSig = await this._selfSign(transaction, mintLPT);
     this._addSignature(transaction, mintLPTSig);
-    const vaultSig = await this._sign(transaction, vault);
+    const vaultSig = await this._selfSign(transaction, vault);
     this._addSignature(transaction, vaultSig);
-    const treasurySSig = await this._sign(transaction, treasuryS);
+    const treasurySSig = await this._selfSign(transaction, treasuryS);
     this._addSignature(transaction, treasurySSig);
-    const treasuryASig = await this._sign(transaction, treasuryA);
+    const treasuryASig = await this._selfSign(transaction, treasuryA);
     this._addSignature(transaction, treasuryASig);
-    const treasuryBSig = await this._sign(transaction, treasuryB);
+    const treasuryBSig = await this._selfSign(transaction, treasuryB);
     this._addSignature(transaction, treasuryBSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);

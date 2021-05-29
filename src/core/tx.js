@@ -35,7 +35,7 @@ class Tx {
     transaction._addSignature(publicKey, signature);
   }
 
-  _sign = (transaction, account) => {
+  _selfSign = (transaction, account) => {
     if (!transaction || !transaction.feePayer) return null;
     if (!account || !account.secretKey) return null;
     const publicKey = account.publicKey;
@@ -85,7 +85,7 @@ class Tx {
     // Sign tx
     const payerSig = await wallet.sign(transaction);
     this._addSignature(transaction, payerSig);
-    const accSig = this._sign(transaction, newAccount);
+    const accSig = this._selfSign(transaction, newAccount);
     this._addSignature(transaction, accSig);
     // Send tx
     const txId = this._sendTransaction(transaction);

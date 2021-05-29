@@ -1,11 +1,10 @@
 const {
   SPLT, AuthorityType, createAccount,
-  deriveAssociatedAddress, Lamports
+  deriveAssociatedAddress, Lamports, RawWallet
 } = require('../dist');
-const Wallet = require('./wallet.mock');
 
-const payer = new Wallet('e06a1a17cf400f6c322e32377a9a7653eecf58f3eb0061023b743c689b43a5fa491573553e4afdcdcd1c94692a138dd2fd0dc0f6946ef798ba34ac1ad00b3720');
-const delegate = new Wallet('2cedf5aba2387360b2e1cbfc649200bbda25f3ca01920c1e97bf81a58b91302180f78b4aeb06b742fd36decdbc60df7dfba2a606ba11de6c987eed1d827572a0');
+const payer = new RawWallet('e06a1a17cf400f6c322e32377a9a7653eecf58f3eb0061023b743c689b43a5fa491573553e4afdcdcd1c94692a138dd2fd0dc0f6946ef798ba34ac1ad00b3720');
+const delegate = new RawWallet('2cedf5aba2387360b2e1cbfc649200bbda25f3ca01920c1e97bf81a58b91302180f78b4aeb06b742fd36decdbc60df7dfba2a606ba11de6c987eed1d827572a0');
 let MINT_ADDRESS = '';
 let SRC_ADDRESS = '';
 let DST_ADDRESS = '';
@@ -120,7 +119,7 @@ describe('SPLT library', function () {
       const lamports = new Lamports();
       const splt = new SPLT();
       const targetAccount = createAccount();
-      const targetWallet = new Wallet(Buffer.from(targetAccount.secretKey).toString('hex'));
+      const targetWallet = new RawWallet(Buffer.from(targetAccount.secretKey).toString('hex'));
       await lamports.transfer(10000000, targetAccount.publicKey.toBase58(), payer);
       const newAddress = await deriveAssociatedAddress(
         targetAccount.publicKey.toBase58(),
