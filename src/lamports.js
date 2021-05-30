@@ -45,7 +45,7 @@ class Lamports extends Tx {
     const instruction = SystemProgram.transfer({
       fromPubkey: payerPublicKey,
       toPubkey: dstPublicKey,
-      lamports
+      lamports: lamports.toString()
     });
     transaction.add(instruction);
     transaction.feePayer = payerPublicKey;
