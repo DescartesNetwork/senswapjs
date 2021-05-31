@@ -1,4 +1,7 @@
-const { PublicKey, Transaction, SYSVAR_RENT_PUBKEY, TransactionInstruction } = require('@solana/web3.js');
+const {
+  PublicKey, Transaction, SYSVAR_RENT_PUBKEY,
+  TransactionInstruction, SystemProgram
+} = require('@solana/web3.js');
 const soproxABI = require('soprox-abi');
 
 const Tx = require('./core/tx');
@@ -81,6 +84,18 @@ class Swap extends Tx {
     return result;
   }
 
+  _deriveTreasuryAddresses = async (treasurerAddress, mintAddresses) => {
+    const treasuryAddresses = await Promise.all(mintAddresses.map(mintAddress => {
+      return account.deriveAssociatedAddress(
+        treasurerAddress,
+        mintAddress,
+        this.spltProgramId.toBase58(),
+        this.splataProgramId.toBase58(),
+      );
+    }));
+    return treasuryAddresses;
+  }
+
   getPoolData = async (poolAddress) => {
     if (!account.isAddress(poolAddress)) throw new Error('Invalid pool address');
     const poolPublicKey = account.fromAddress(poolAddress);
@@ -118,9 +133,9 @@ class Swap extends Tx {
   initializePool = async (
     reserveS, reserveA, reserveB,
     ownerAddress, pool, lptAddress, mintLPT, vault,
-    srcSAddress, mintSAddress, treasuryS,
-    srcAAddress, mintAAddress, treasuryA,
-    srcBAddress, mintBAddress, treasuryB,
+    srcSAddress, mintSAddress,
+    srcAAddress, mintAAddress,
+    srcBAddress, mintBAddress,
     wallet
   ) => {
     srcSAddress = srcSAddress || DEFAULT_EMPTY_ADDRESSS;
@@ -151,24 +166,20 @@ class Swap extends Tx {
     const seed = [pool.publicKey.toBuffer()];
     const treasurerPublicKey = await PublicKey.createProgramAddress(seed, this.swapProgramId);
     const treasurerAddress = treasurerPublicKey.toBase58();
+    // Get treasury S, A, B
+    const [treasurySPublicKey, treasuryAPublicKey, treasuryBPublicKey] = (await this._deriveTreasuryAddresses(
+      treasurerAddress,
+      [mintSAddress, mintAAddress, mintBAddress]
+    )).map(treasuryAddress => account.fromAddress(treasuryAddress));
     // Init lpt mint
     const freezeAuthorityAddress = await proofOfMintLPT(pool.publicKey.toBase58(), this.swapProgramId.toBase58());
     await this._splt.initializeMint(9, treasurerAddress, freezeAuthorityAddress, mintLPT, wallet);
-    // Init lpt account
-    const mintLPTAddress = mintLPT.publicKey.toBase58();
-    await this._splt.initializeAccount(lptAddress, mintLPTAddress, wallet);
     // Rent pool
     const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
     await this._rentAccount(wallet, pool, poolSpace, this.swapProgramId);
     // Rent vault
     const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
     await this._rentAccount(wallet, vault, accountSpace, this.spltProgramId);
-    // Rent treasury S
-    await this._rentAccount(wallet, treasuryS, accountSpace, this.spltProgramId);
-    // Rent treasury A
-    await this._rentAccount(wallet, treasuryA, accountSpace, this.spltProgramId);
-    // Rent treasury B
-    await this._rentAccount(wallet, treasuryB, accountSpace, this.spltProgramId);
     // Build tx
     let transaction = new Transaction();
     transaction = await this._addRecentCommitment(transaction);
@@ -194,19 +205,21 @@ class Swap extends Tx {
 
         { pubkey: srcSPublicKey, isSigner: false, isWritable: true },
         { pubkey: mintSPublicKey, isSigner: false, isWritable: false },
-        { pubkey: treasuryS.publicKey, isSigner: true, isWritable: true },
+        { pubkey: treasurySPublicKey, isSigner: false, isWritable: true },
 
         { pubkey: srcAPublicKey, isSigner: false, isWritable: true },
         { pubkey: mintAPublicKey, isSigner: false, isWritable: false },
-        { pubkey: treasuryA.publicKey, isSigner: true, isWritable: true },
+        { pubkey: treasuryAPublicKey, isSigner: false, isWritable: true },
 
         { pubkey: srcBPublicKey, isSigner: false, isWritable: true },
         { pubkey: mintBPublicKey, isSigner: false, isWritable: false },
-        { pubkey: treasuryB.publicKey, isSigner: true, isWritable: true },
+        { pubkey: treasuryBPublicKey, isSigner: false, isWritable: true },
 
         { pubkey: treasurerPublicKey, isSigner: false, isWritable: false },
+        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
         { pubkey: this.spltProgramId, isSigner: false, isWritable: false },
         { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
+        { pubkey: this.splataProgramId, isSigner: false, isWritable: false },
       ],
       programId: this.swapProgramId,
       data: layout.toBuffer()
@@ -222,12 +235,6 @@ class Swap extends Tx {
     this._addSignature(transaction, mintLPTSig);
     const vaultSig = await this._selfSign(transaction, vault);
     this._addSignature(transaction, vaultSig);
-    const treasurySSig = await this._selfSign(transaction, treasuryS);
-    this._addSignature(transaction, treasurySSig);
-    const treasuryASig = await this._selfSign(transaction, treasuryA);
-    this._addSignature(transaction, treasuryASig);
-    const treasuryBSig = await this._selfSign(transaction, treasuryB);
-    this._addSignature(transaction, treasuryBSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
     return txId;
@@ -240,9 +247,9 @@ class Swap extends Tx {
   addLiquidity = async (
     deltaS, deltaA, deltaB,
     poolAddress, lptAddress, mintLPTAddress,
-    srcSAddress, treasurySAddress,
-    srcAAddress, treasuryAAddress,
-    srcBAddress, treasuryBAddress,
+    srcSAddress, mintSAddress,
+    srcAAddress, mintAAddress,
+    srcBAddress, mintBAddress,
     wallet
   ) => {
     if (!srcSAddress && !srcAAddress && !srcBAddress) throw new Error('Invalid source address');
@@ -253,26 +260,29 @@ class Swap extends Tx {
     if (!account.isAddress(lptAddress)) throw new Error('Invalid lpt address');
     if (!account.isAddress(mintLPTAddress)) throw new Error('Invalid mint LPT address');
     if (!account.isAddress(srcSAddress)) throw new Error('Invalid source S address');
-    if (!account.isAddress(treasurySAddress)) throw new Error('Invalid treasury S address');
+    if (!account.isAddress(mintSAddress)) throw new Error('Invalid mint S address');
     if (!account.isAddress(srcAAddress)) throw new Error('Invalid source A address');
-    if (!account.isAddress(treasuryAAddress)) throw new Error('Invalid treasury A address');
+    if (!account.isAddress(mintAAddress)) throw new Error('Invalid mint A address');
     if (!account.isAddress(srcBAddress)) throw new Error('Invalid source B address');
-    if (!account.isAddress(treasuryBAddress)) throw new Error('Invalid treasury B address');
+    if (!account.isAddress(mintBAddress)) throw new Error('Invalid mint B address');
     const poolPublicKey = account.fromAddress(poolAddress);
     const lptPublicKey = account.fromAddress(lptAddress);
     const mintLPTPublicKey = account.fromAddress(mintLPTAddress);
     const srcSPublicKey = account.fromAddress(srcSAddress);
-    const treasurySPublicKey = account.fromAddress(treasurySAddress);
     const srcAPublicKey = account.fromAddress(srcAAddress);
-    const treasuryAPublicKey = account.fromAddress(treasuryAAddress);
     const srcBPublicKey = account.fromAddress(srcBAddress);
-    const treasuryBPublicKey = account.fromAddress(treasuryBAddress);
     // Get payer
     const payerAddress = await wallet.getAccount();
     const payerPublicKey = account.fromAddress(payerAddress);
     // Get treasurer
     const seed = [poolPublicKey.toBuffer()];
     const treasurerPublicKey = await PublicKey.createProgramAddress(seed, this.swapProgramId);
+    const treasurerAddress = treasurerPublicKey.toBase58();
+    // Get treasury S, A, B
+    const [treasurySPublicKey, treasuryAPublicKey, treasuryBPublicKey] = (await this._deriveTreasuryAddresses(
+      treasurerAddress,
+      [mintSAddress, mintAAddress, mintBAddress]
+    )).map(treasuryAddress => account.fromAddress(treasuryAddress));
     // Build tx
     let transaction = new Transaction();
     transaction = await this._addRecentCommitment(transaction);
@@ -322,35 +332,38 @@ class Swap extends Tx {
   removeLiquidity = async (
     lpt,
     poolAddress, lptAddress, mintLPTAddress,
-    dstSAddress, treasurySAddress,
-    dstAAddress, treasuryAAddress,
-    dstBAddress, treasuryBAddress,
+    dstSAddress, mintSAddress,
+    dstAAddress, mintAAddress,
+    dstBAddress, mintBAddress,
     wallet
   ) => {
     if (!account.isAddress(poolAddress)) throw new Error('Invalid pool address');
     if (!account.isAddress(lptAddress)) throw new Error('Invalid lpt address');
     if (!account.isAddress(mintLPTAddress)) throw new Error('Invalid mint LPT address');
     if (!account.isAddress(dstSAddress)) throw new Error('Invalid destination S address');
-    if (!account.isAddress(treasurySAddress)) throw new Error('Invalid treasury S address');
+    if (!account.isAddress(mintSAddress)) throw new Error('Invalid mint S address');
     if (!account.isAddress(dstAAddress)) throw new Error('Invalid destination A address');
-    if (!account.isAddress(treasuryAAddress)) throw new Error('Invalid treasury A address');
+    if (!account.isAddress(mintAAddress)) throw new Error('Invalid mint A address');
     if (!account.isAddress(dstBAddress)) throw new Error('Invalid destination B address');
-    if (!account.isAddress(treasuryBAddress)) throw new Error('Invalid treasury B address');
+    if (!account.isAddress(mintBAddress)) throw new Error('Invalid mint B address');
     const poolPublicKey = account.fromAddress(poolAddress);
     const lptPublicKey = account.fromAddress(lptAddress);
     const mintLPTPublicKey = account.fromAddress(mintLPTAddress);
     const dstSPublicKey = account.fromAddress(dstSAddress);
-    const treasurySPublicKey = account.fromAddress(treasurySAddress);
     const dstAPublicKey = account.fromAddress(dstAAddress);
-    const treasuryAPublicKey = account.fromAddress(treasuryAAddress);
     const dstBPublicKey = account.fromAddress(dstBAddress);
-    const treasuryBPublicKey = account.fromAddress(treasuryBAddress);
     // Get payer
     const payerAddress = await wallet.getAccount();
     const payerPublicKey = account.fromAddress(payerAddress);
     // Get treasurer
     const seed = [poolPublicKey.toBuffer()];
     const treasurerPublicKey = await PublicKey.createProgramAddress(seed, this.swapProgramId);
+    const treasurerAddress = treasurerPublicKey.toBase58();
+    // Get treasury S, A, B
+    const [treasurySPublicKey, treasuryAPublicKey, treasuryBPublicKey] = (await this._deriveTreasuryAddresses(
+      treasurerAddress,
+      [mintSAddress, mintAAddress, mintBAddress]
+    )).map(treasuryAddress => account.fromAddress(treasuryAddress));
     // Build tx
     let transaction = new Transaction();
     transaction = await this._addRecentCommitment(transaction);
@@ -389,24 +402,22 @@ class Swap extends Tx {
   swap = async (
     amount, limit,
     poolAddress, vaultAddress,
-    srcAddress, treasuryBidAddress,
-    dstAddress, treasuryAskAddress,
+    srcAddress, mintBidAddress,
+    dstAddress, mintAskAddress,
     treasurySenAddress,
     wallet,
   ) => {
     if (!account.isAddress(poolAddress)) throw new Error('Invalid pool address');
     if (!account.isAddress(vaultAddress)) throw new Error('Invalid vault address');
     if (!account.isAddress(srcAddress)) throw new Error('Invalid source address');
-    if (!account.isAddress(treasuryBidAddress)) throw new Error('Invalid treasury bid address');
+    if (!account.isAddress(mintBidAddress)) throw new Error('Invalid mint bid address');
     if (!account.isAddress(dstAddress)) throw new Error('Invalid destination address');
-    if (!account.isAddress(treasuryAskAddress)) throw new Error('Invalid treasury ask address');
+    if (!account.isAddress(mintAskAddress)) throw new Error('Invalid mint ask address');
     if (!account.isAddress(treasurySenAddress)) throw new Error('Invalid treasury sen address');
     const poolPublicKey = account.fromAddress(poolAddress);
     const vaultPublicKey = account.fromAddress(vaultAddress);
     const srcPublicKey = account.fromAddress(srcAddress);
-    const treasuryBidPublicKey = account.fromAddress(treasuryBidAddress);
     const dstPublicKey = account.fromAddress(dstAddress);
-    const treasuryAskPublicKey = account.fromAddress(treasuryAskAddress);
     const treasurySenPublicKey = account.fromAddress(treasurySenAddress);
     // Get payer
     const payerAddress = await wallet.getAccount();
@@ -414,6 +425,12 @@ class Swap extends Tx {
     // Get treasurer
     const seed = [poolPublicKey.toBuffer()];
     const treasurerPublicKey = await PublicKey.createProgramAddress(seed, this.swapProgramId);
+    const treasurerAddress = treasurerPublicKey.toBase58();
+    // get treasury bid, ask
+    const [treasuryBidPublicKey, treasuryAskPublicKey] = (await this._deriveTreasuryAddresses(
+      treasurerAddress,
+      [mintBidAddress, mintAskAddress]
+    )).map(treasuryAddress => account.fromAddress(treasuryAddress));
     // Build tx
     let transaction = new Transaction();
     transaction = await this._addRecentCommitment(transaction);

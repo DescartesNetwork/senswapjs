@@ -17,306 +17,205 @@ class LiteSwap {
     this._swap = new Swap(swapProgramAddress, spltProgramAddress, splataProgramAddress, nodeUrl);
   }
 
+  /**
+   * Watch and return changed data
+   */
   watchAndFetch = (callback) => {
     return this._swap.watchAndFetch(callback);
   }
+
+  /**
+   * Watch only
+   */
   watch = (callback) => {
     return this._swap.watch(callback);
   }
-  getPoolData = (poolAddress) => {
-    return this._swap.getPoolData(poolAddress);
-  }
-  getLPTData = (lptAddress) => {
-    return this._swap.getLPTData(lptAddress);
+
+  /**
+   * Get pool data
+   */
+  getPoolData = async (poolAddress) => {
+    return await this._swap.getPoolData(poolAddress);
   }
 
-  _getLPTAddress = (mintLPTAddress, wallet, autoCreating = true) => {
-    return new Promise((resolve, reject) => {
-      let lptAddress = '';
-      return wallet.getAccount().then(payerAddress => {
-        return deriveAssociatedAddress(
-          payerAddress,
-          mintLPTAddress,
-          this._swap.spltProgramId.toBase58(),
-          this._swap.splataProgramId.toBase58(),
-        );
-      }).then(associatedAccountAddress => {
-        lptAddress = associatedAccountAddress;
-        return this.getLPTData(lptAddress).then(data => {
-          return resolve(lptAddress);
-        }).catch(er => {
-          if (!autoCreating) return reject(er);
-          return this._swap.initializeLPT(lptAddress, mintLPTAddress, wallet);
-        }).then(txId => {
-          return resolve(lptAddress);
-        }).catch(er => {
-          return reject(er);
-        });
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  /**
+   * Get lpt data
+   */
+  getLPTData = async (lptAddress) => {
+    return await this._swap.getLPTData(lptAddress);
+  }
+
+  /**
+   * Derive lpt address
+   */
+  _deriveLPTAddress = async (mintLPTAddress, wallet, autoCreating = true) => {
+    const payerAddress = await wallet.getAccount()
+    const lptAddress = await deriveAssociatedAddress(
+      payerAddress,
+      mintLPTAddress,
+      this._swap.spltProgramId.toBase58(),
+      this._swap.splataProgramId.toBase58(),
+    );
+    try {
+      await this.getLPTData(lptAddress);
+      return lptAddress;
+    } catch (er) {
+      if (!autoCreating) throw new Error(er);
+      await this._swap.initializeLPT(lptAddress, mintLPTAddress, wallet);
+      return lptAddress;
+    }
   }
 
   /**
    * Initialize Pool
    */
-  initializePool = (reserveS, reserveA, reserveB, srcSAddress, srcAAddress, srcBAddress, ownerAddress, wallet) => {
-    let pool = null;
-    let lptAddress = '';
+  initializePool = async (reserveS, reserveA, reserveB, srcSAddress, srcAAddress, srcBAddress, ownerAddress, wallet) => {
     const mintLPT = createAccount();
-    const mintLPTAddress = mintLPT.publicKey.toBase58();
     const vault = createAccount();
-    let mintSAddress = '';
-    const treasuryS = createAccount();
-    let mintAAddress = '';
-    const treasuryA = createAccount();
-    let mintBAddress = '';
-    const treasuryB = createAccount();
-    return new Promise((resolve, reject) => {
-      return createStrictAccount(this._swap.swapProgramId).then(strictAccount => {
-        pool = strictAccount;
-        return wallet.getAccount();
-      }).then(payerAddress => {
-        return deriveAssociatedAddress(
-          payerAddress,
-          mintLPTAddress,
-          this._swap.spltProgramId.toBase58(),
-          this._swap.splataProgramId.toBase58(),
-        );
-      }).then(associatedAccountAddress => {
-        lptAddress = associatedAccountAddress;
-        return this._swap._splt.getAccountData(srcSAddress)
-      }).then(({ mint: { address } }) => {
-        mintSAddress = address;
-        return this._swap._splt.getAccountData(srcAAddress);
-      }).then(({ mint: { address } }) => {
-        mintAAddress = address;
-        return this._swap._splt.getAccountData(srcBAddress);
-      }).then(({ mint: { address } }) => {
-        mintBAddress = address;
-        return this._swap.initializePool(
-          reserveS, reserveA, reserveB,
-          ownerAddress, pool, lptAddress, mintLPT, vault,
-          srcSAddress, mintSAddress, treasuryS,
-          srcAAddress, mintAAddress, treasuryA,
-          srcBAddress, mintBAddress, treasuryB,
-          wallet
-        );
-      }).then(txId => {
-        return resolve({
-          txId,
-          poolAddress: pool.publicKey.toBase58(),
-          lptAddress
-        });
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+    const pool = await createStrictAccount(this._swap.swapProgramId);
+    const payerAddress = await wallet.getAccount();
+    const lptAddress = await deriveAssociatedAddress(
+      payerAddress,
+      mintLPT.publicKey.toBase58(),
+      this._swap.spltProgramId.toBase58(),
+      this._swap.splataProgramId.toBase58(),
+    );
+    const { mint: { address: mintSAddress } } = await this._swap._splt.getAccountData(srcSAddress);
+    const { mint: { address: mintAAddress } } = await this._swap._splt.getAccountData(srcAAddress);
+    const { mint: { address: mintBAddress } } = await this._swap._splt.getAccountData(srcBAddress);
+    const txId = await this._swap.initializePool(
+      reserveS, reserveA, reserveB,
+      ownerAddress, pool, lptAddress, mintLPT, vault,
+      srcSAddress, mintSAddress,
+      srcAAddress, mintAAddress,
+      srcBAddress, mintBAddress,
+      wallet
+    );
+    return { txId, poolAddress: pool.publicKey.toBase58(), lptAddress }
   }
 
   /**
    * Initialize LPT
    */
-  initializeLPT = (mintLPTAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      let lptAddress = '';
-      return wallet.getAccount().then(payerAddress => {
-        return deriveAssociatedAddress(
-          payerAddress,
-          mintLPTAddress,
-          this._swap.spltProgramId.toBase58(),
-          this._swap.splataProgramId.toBase58(),
-        );
-      }).then(associatedAccountAddress => {
-        lptAddress = associatedAccountAddress;
-        return this._swap.initializeLPT(lptAddress, mintLPTAddress, wallet);
-      }).then(txId => {
-        return resolve({ txId, lptAddress });
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  initializeLPT = async (mintLPTAddress, wallet) => {
+    const payerAddress = await wallet.getAccount();
+    const lptAddress = await deriveAssociatedAddress(
+      payerAddress,
+      mintLPTAddress,
+      this._swap.spltProgramId.toBase58(),
+      this._swap.splataProgramId.toBase58(),
+    );
+    const txId = await this._swap.initializeLPT(lptAddress, mintLPTAddress, wallet);
+    return { txId, lptAddress }
   }
 
   /**
    * Add Liquidity
    */
-  addLiquidity = (deltaS, deltaA, deltaB, poolAddress, srcSAddress, srcAAddress, srcBAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      let lptAddress = '';
-      let data = {}
-      return this._swap.getPoolData(poolAddress).then(re => {
-        data = re;
-        const { mint_lpt: { address: mintLPTAddress } } = data;
-        return this._getLPTAddress(mintLPTAddress, wallet);
-      }).then(associatedAccountAddress => {
-        lptAddress = associatedAccountAddress;
-        const {
-          mint_lpt: { address: mintLPTAddress },
-          treasury_s: treasurySAddress,
-          treasury_a: treasuryAAddress,
-          treasury_b: treasuryBAddress,
-        } = data;
-        return this._swap.addLiquidity(
-          deltaS, deltaA, deltaB,
-          poolAddress, lptAddress, mintLPTAddress,
-          srcSAddress, treasurySAddress,
-          srcAAddress, treasuryAAddress,
-          srcBAddress, treasuryBAddress,
-          wallet
-        );
-      }).then(txId => {
-        return resolve({ txId, lptAddress });
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  addLiquidity = async (deltaS, deltaA, deltaB, poolAddress, srcSAddress, srcAAddress, srcBAddress, wallet) => {
+    const data = await this._swap.getPoolData(poolAddress);
+    const {
+      mint_lpt: { address: mintLPTAddress },
+      mint_s: { address: mintSAddress },
+      mint_a: { address: mintAAddress },
+      mint_b: { address: mintBAddress },
+    } = data;
+    const lptAddress = await this._deriveLPTAddress(mintLPTAddress, wallet);
+    const txId = await this._swap.addLiquidity(
+      deltaS, deltaA, deltaB,
+      poolAddress, lptAddress, mintLPTAddress,
+      srcSAddress, mintSAddress,
+      srcAAddress, mintAAddress,
+      srcBAddress, mintBAddress,
+      wallet
+    );
+    return { txId, lptAddress };
   }
 
   /**
    * Remove Liquidity
    */
-  removeLiquidity = (lpt, poolAddress, dstSAddress, dstAAddress, dstBAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      let lptAddress = '';
-      let data = {};
-      return this._swap.getPoolData(poolAddress).then(re => {
-        data = re;
-        const { mint_lpt: { address: mintLPTAddress } } = data;
-        return this._getLPTAddress(mintLPTAddress, wallet, false);
-      }).then(associatedAccountAddress => {
-        const {
-          mint_lpt: { address: mintLPTAddress },
-          treasury_s: treasurySAddress,
-          treasury_a: treasuryAAddress,
-          treasury_b: treasuryBAddress,
-        } = data;
-        lptAddress = associatedAccountAddress;
-        return this._swap.removeLiquidity(
-          lpt,
-          poolAddress, lptAddress, mintLPTAddress,
-          dstSAddress, treasurySAddress,
-          dstAAddress, treasuryAAddress,
-          dstBAddress, treasuryBAddress,
-          wallet
-        );
-      }).then(txId => {
-        return resolve({ txId, lptAddress });
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  removeLiquidity = async (lpt, poolAddress, dstSAddress, dstAAddress, dstBAddress, wallet) => {
+    const data = await this._swap.getPoolData(poolAddress);
+    const {
+      mint_lpt: { address: mintLPTAddress },
+      mint_s: { address: mintSAddress },
+      mint_a: { address: mintAAddress },
+      mint_b: { address: mintBAddress },
+    } = data;
+    const lptAddress = await this._deriveLPTAddress(mintLPTAddress, wallet, false);
+    const txId = await this._swap.removeLiquidity(
+      lpt,
+      poolAddress, lptAddress, mintLPTAddress,
+      dstSAddress, mintSAddress,
+      dstAAddress, mintAAddress,
+      dstBAddress, mintBAddress,
+      wallet
+    );
+    return { txId, lptAddress };
   }
 
   /**
    * Swap
    */
-  swap = (amount, limit, poolAddress, srcAddress, dstAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      let vaultAddress = '';
-      let treasuryBidAddress = '';
-      let treasuryAskAddress = '';
-      let mintSAddress = '';
-      let treasurySAddress = '';
-      let mintAAddress = '';
-      let treasuryAAddress = '';
-      let mintBAddress = '';
-      let treasuryBAddress = '';
-      return this._swap.getPoolData(poolAddress).then(data => {
-        const {
-          vault: { address: _vaultAddress },
-          mint_s: { address: _mintSAddress },
-          treasury_s: _treasurySAddress,
-          mint_a: { address: _mintAAddress },
-          treasury_a: _treasuryAAddress,
-          mint_b: { address: _mintBAddress },
-          treasury_b: _treasuryBAddress,
-        } = data;
-        vaultAddress = _vaultAddress;
-        mintSAddress = _mintSAddress;
-        treasurySAddress = _treasurySAddress;
-        mintAAddress = _mintAAddress;
-        treasuryAAddress = _treasuryAAddress;
-        mintBAddress = _mintBAddress;
-        treasuryBAddress = _treasuryBAddress;
-        return this._swap._splt.getAccountData(srcAddress);
-      }).then(({ mint: { address } }) => {
-        if (address == mintSAddress) treasuryBidAddress = treasurySAddress;
-        if (address == mintAAddress) treasuryBidAddress = treasuryAAddress;
-        if (address == mintBAddress) treasuryBidAddress = treasuryBAddress;
-        return this._swap._splt.getAccountData(dstAddress);
-      }).then(({ mint: { address } }) => {
-        if (address == mintSAddress) treasuryAskAddress = treasurySAddress;
-        if (address == mintAAddress) treasuryAskAddress = treasuryAAddress;
-        if (address == mintBAddress) treasuryAskAddress = treasuryBAddress;
-        if (!treasuryBidAddress) return reject('Invalid source address');
-        if (!treasuryAskAddress) return reject('Invalid destination address');
-        return this._swap.swap(
-          amount, limit,
-          poolAddress, vaultAddress,
-          srcAddress, treasuryBidAddress,
-          dstAddress, treasuryAskAddress,
-          treasurySAddress,
-          wallet
-        );
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  swap = async (amount, limit, poolAddress, srcAddress, dstAddress, wallet) => {
+    const data = await this._swap.getPoolData(poolAddress);
+    const { vault: { address: vaultAddress }, treasury_s: treasurySAddress } = data;
+    const { mint: { address: mintBidAddress } } = await this._swap._splt.getAccountData(srcAddress);
+    const { mint: { address: mintAskAddress } } = await this._swap._splt.getAccountData(dstAddress);
+    const txId = await this._swap.swap(
+      amount, limit,
+      poolAddress, vaultAddress,
+      srcAddress, mintBidAddress,
+      dstAddress, mintAskAddress,
+      treasurySAddress,
+      wallet
+    );
+    return txId;
   }
 
   /**
    * Transfer
    */
-  transfer = (lpt, srcLPTAddress, dstLPTAddress, wallet) => {
-    return this._swap.transfer(lpt, srcLPTAddress, dstLPTAddress, wallet);
+  transfer = async (lpt, srcLPTAddress, dstLPTAddress, wallet) => {
+    return await this._swap.transfer(lpt, srcLPTAddress, dstLPTAddress, wallet);
   }
 
   /**
    * Freeze pool
    */
-  freezePool = (poolAddress, wallet) => {
-    return this._swap.freezePool(poolAddress, wallet);
+  freezePool = async (poolAddress, wallet) => {
+    return await this._swap.freezePool(poolAddress, wallet);
   }
 
   /**
    * Thaw pool
    */
-  thawPool = (poolAddress, wallet) => {
-    return this._swap.thawPool(poolAddress, wallet);
+  thawPool = async (poolAddress, wallet) => {
+    return await this._swap.thawPool(poolAddress, wallet);
   }
 
   /**
    * Earn
    */
-  earn = (amount, poolAddress, dstAddress, wallet) => {
-    return new Promise((resolve, reject) => {
-      return this._swap.getPoolData(poolAddress).then(data => {
-        const { vault: { address: vaultAddress } } = data;
-        return this._swap.earn(amount, poolAddress, vaultAddress, dstAddress, wallet);
-      }).then(txId => {
-        return resolve(txId);
-      }).catch(er => {
-        return reject(er);
-      });
-    });
+  earn = async (amount, poolAddress, dstAddress, wallet) => {
+    const { vault: { address: vaultAddress } } = await this._swap.getPoolData(poolAddress);
+    const txId = await this._swap.earn(amount, poolAddress, vaultAddress, dstAddress, wallet);
+    return txId;
   }
 
   /**
    * Close LPT
    */
-  closeLPT = (lptAddress, wallet) => {
-    return this._swap.closeLPT(lptAddress, wallet);
+  closeLPT = async (lptAddress, wallet) => {
+    return await this._swap.closeLPT(lptAddress, wallet);
   }
 
   /**
    * Transfer Ownership
    */
-  transferPoolOwnership = (poolAddress, newOwnerAddress, wallet) => {
-    return this._swap.transferPoolOwnership(poolAddress, newOwnerAddress, wallet);
+  transferPoolOwnership = async (poolAddress, newOwnerAddress, wallet) => {
+    return await this._swap.transferPoolOwnership(poolAddress, newOwnerAddress, wallet);
   }
 }
 
