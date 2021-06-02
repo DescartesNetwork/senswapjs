@@ -46,6 +46,13 @@ class LiteSwap {
   }
 
   /**
+   * Derive pool address
+   */
+  derivePoolAddress = async (mintAuthorityAddress, freezeAuthorityAddress) => {
+    return await this._swap.derivePoolAddress(mintAuthorityAddress, freezeAuthorityAddress);
+  }
+
+  /**
    * Derive lpt address
    */
   _deriveLPTAddress = async (mintLPTAddress, wallet, autoCreating = true) => {

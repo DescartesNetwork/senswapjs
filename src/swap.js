@@ -81,7 +81,7 @@ class Swap extends Tx {
       xor(freezeAuthorityPublicKey.toBuffer(), mintAuthorityPublicKey.toBuffer())
     ));
     const seed = [poolPublicKey.toBuffer()];
-    const treasurerPublicKey = await PublicKey.createProgramAddress(seed, swapProgramId);
+    const treasurerPublicKey = await PublicKey.createProgramAddress(seed, this.swapProgramId);
     if (treasurerPublicKey.toBase58() != mintAuthorityPublicKey.toBase58()) return null;
     return poolPublicKey.toBase58();
   }
