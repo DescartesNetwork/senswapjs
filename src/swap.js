@@ -7,7 +7,6 @@ const soproxABI = require('soprox-abi');
 const Tx = require('./core/tx');
 const { SPLT } = require('./splt');
 const account = require('./account');
-const { proofOfMintLPT } = require('./crypto');
 const schema = require('./schema');
 const {
   DEFAULT_SWAP_PROGRAM_ADDRESS,
@@ -58,6 +57,11 @@ class Swap extends Tx {
       if (!type) return callback('Unmatched type', null);
       return callback(null, { type, address });
     });
+  }
+
+  isMintLPTAddress = (freezeAuthorityAddress) => {
+    if (!ssjs.isAddress(freezeAuthorityAddress)) return false;
+    return freezeAuthorityAddress === this.swapProgramId.toBase58();
   }
 
   _getMintData = async (mintAddress) => {
@@ -171,12 +175,12 @@ class Swap extends Tx {
       treasurerAddress,
       [mintSAddress, mintAAddress, mintBAddress]
     )).map(treasuryAddress => account.fromAddress(treasuryAddress));
-    // Init lpt mint
-    const freezeAuthorityAddress = await proofOfMintLPT(pool.publicKey.toBase58(), this.swapProgramId.toBase58());
-    await this._splt.initializeMint(9, treasurerAddress, freezeAuthorityAddress, mintLPT, wallet);
     // Rent pool
     const poolSpace = (new soproxABI.struct(schema.POOL_SCHEMA)).space;
     await this._rentAccount(wallet, pool, poolSpace, this.swapProgramId);
+    // Rent mint
+    const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
+    await this._rentAccount(wallet, mintLPT, mintSpace, this.spltProgramId);
     // Rent vault
     const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
     await this._rentAccount(wallet, vault, accountSpace, this.spltProgramId);
@@ -200,8 +204,9 @@ class Swap extends Tx {
         { pubkey: ownerPublicKey, isSigner: false, isWritable: false },
         { pubkey: pool.publicKey, isSigner: true, isWritable: true },
         { pubkey: lptPublicKey, isSigner: false, isWritable: true },
-        { pubkey: mintLPT.publicKey, isSigner: true, isWritable: true },
+        { pubkey: mintLPT.publicKey, isSigner: false, isWritable: true },
         { pubkey: vault.publicKey, isSigner: true, isWritable: true },
+        { pubkey: this.swapProgramId, isSigner: false, isWritable: false },
 
         { pubkey: srcSPublicKey, isSigner: false, isWritable: true },
         { pubkey: mintSPublicKey, isSigner: false, isWritable: false },
@@ -231,8 +236,6 @@ class Swap extends Tx {
     this._addSignature(transaction, payerSig);
     const poolSig = await this._selfSign(transaction, pool);
     this._addSignature(transaction, poolSig);
-    const mintLPTSig = await this._selfSign(transaction, mintLPT);
-    this._addSignature(transaction, mintLPTSig);
     const vaultSig = await this._selfSign(transaction, vault);
     this._addSignature(transaction, vaultSig);
     // Send tx

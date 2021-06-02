@@ -30,16 +30,4 @@ crypto.decrypt = (key, cypher) => {
   return aesjs.utils.utf8.fromBytes(p);
 }
 
-crypto.proofOfMintLPT = async (poolAddress, swapProgramAddress) => {
-  const poolPublicKey = fromAddress(poolAddress);
-  const swapProgramId = fromAddress(swapProgramAddress);
-  const seed = [poolPublicKey.toBuffer()];
-  const treasurerPublicKey = await PublicKey.createProgramAddress(seed, swapProgramId);
-  const a = poolPublicKey.toBuffer();
-  const b = treasurerPublicKey.toBuffer();
-  const c = xor(a, b);
-  const proof = new PublicKey(c);
-  return proof.toBase58();
-}
-
 module.exports = crypto;

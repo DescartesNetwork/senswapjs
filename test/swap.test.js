@@ -185,7 +185,10 @@ describe('Swap library', function () {
   });
 
   describe('Test constructor', function () {
-    it('Should fill configs', function () {
+    it('Should fill configs', async function () {
+      // Payer
+      const payerAddress = await payer.getAccount();
+      console.log('PAYER:', payerAddress);
       // Mint 0
       console.log('MINT_ADDRESS_0:', MINT_ADDRESS_0);
       console.log('ACCOUNT_ADDRESS_0:', ACCOUNT_ADDRESS_0);

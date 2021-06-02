@@ -18,20 +18,6 @@ account.isAddress = (address) => {
   }
 }
 
-account.isMintLPTAddress = async (mintAuthorityAddress, freezeAuthorityAddress, swapProgramAddress) => {
-  if (!account.isAddress(mintAuthorityAddress)) throw new Error('Invalid mint authority address');
-  if (!account.isAddress(freezeAuthorityAddress)) throw new Error('Invalid freeze authority address');
-  if (!account.isAddress(swapProgramAddress)) throw new Error('Invalid swap program address');
-  const mintAuthorityPublicKey = account.fromAddress(mintAuthorityAddress);
-  const freezeAuthorityPublicKey = account.fromAddress(freezeAuthorityAddress); // Proof of mint LPT
-  const swapProgramId = account.fromAddress(swapProgramAddress);
-  const poolPublicKey = new PublicKey(xor(freezeAuthorityPublicKey.toBuffer(), mintAuthorityPublicKey.toBuffer()));
-  const seed = [poolPublicKey.toBuffer()];
-  const treasurerPublicKey = await PublicKey.createProgramAddress(seed, swapProgramId);
-  if (treasurerPublicKey.toBase58() != mintAuthorityPublicKey.toBase58()) return null;
-  return poolPublicKey.toBase58();
-}
-
 account.createAccount = () => {
   const acc = new Account();
   return acc;
