@@ -2,7 +2,6 @@ const { Account, PublicKey } = require('@solana/web3.js');
 const { doUntil } = require('async');
 const nacl = require('tweetnacl');
 const ssKeystore = require('./keystore');
-const xor = require('buffer-xor');
 
 
 const account = {}

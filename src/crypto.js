@@ -1,9 +1,6 @@
 const keccak256 = require('keccak256');
 const aesjs = require('aes-js');
 const { PublicKey } = require('@solana/web3.js');
-const xor = require('buffer-xor');
-
-const { fromAddress } = require('./account');
 
 const crypto = {}
 

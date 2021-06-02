@@ -3,6 +3,7 @@ const {
   TransactionInstruction, SystemProgram
 } = require('@solana/web3.js');
 const soproxABI = require('soprox-abi');
+const xor = require('buffer-xor');
 
 const Tx = require('./core/tx');
 const { SPLT } = require('./splt');
@@ -59,9 +60,30 @@ class Swap extends Tx {
     });
   }
 
-  isMintLPTAddress = (freezeAuthorityAddress) => {
-    if (!ssjs.isAddress(freezeAuthorityAddress)) return false;
-    return freezeAuthorityAddress === this.swapProgramId.toBase58();
+  _genProofAddress = async (poolAddress) => {
+    if (!account.isAddress(poolAddress)) throw new Error('Invalid pool address');
+    const poolPublicKey = account.fromAddress(poolAddress);
+    const seed = [poolPublicKey.toBuffer()];
+    const treasurerPublicKey = await PublicKey.createProgramAddress(seed, this.swapProgramId);
+    const proof = new PublicKey(xor(this.swapProgramId.toBuffer(),
+      xor(poolPublicKey.toBuffer(), treasurerPublicKey.toBuffer())
+    ));
+    return proof.toBase58();
+  }
+
+  derivePoolAddress = async (mintAuthorityAddress, freezeAuthorityAddress) => {
+    if (!account.isAddress(mintAuthorityAddress)) throw new Error('Invalid mint authority address');
+    if (!account.isAddress(freezeAuthorityAddress)) throw new Error('Invalid freeze authority address');
+
+    const mintAuthorityPublicKey = account.fromAddress(mintAuthorityAddress);
+    const freezeAuthorityPublicKey = account.fromAddress(freezeAuthorityAddress); // Proof of mint LPT
+    const poolPublicKey = new PublicKey(xor(this.swapProgramId.toBuffer(),
+      xor(freezeAuthorityPublicKey.toBuffer(), mintAuthorityPublicKey.toBuffer())
+    ));
+    const seed = [poolPublicKey.toBuffer()];
+    const treasurerPublicKey = await PublicKey.createProgramAddress(seed, swapProgramId);
+    if (treasurerPublicKey.toBase58() != mintAuthorityPublicKey.toBase58()) return null;
+    return poolPublicKey.toBase58();
   }
 
   _getMintData = async (mintAddress) => {
@@ -184,6 +206,9 @@ class Swap extends Tx {
     // Rent vault
     const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
     await this._rentAccount(wallet, vault, accountSpace, this.spltProgramId);
+    // Generate proof
+    const proofAddress = await this._genProofAddress(pool.publicKey.toBase58());
+    const proofPublicKey = account.fromAddress(proofAddress);
     // Build tx
     let transaction = new Transaction();
     transaction = await this._addRecentCommitment(transaction);
@@ -206,7 +231,7 @@ class Swap extends Tx {
         { pubkey: lptPublicKey, isSigner: false, isWritable: true },
         { pubkey: mintLPT.publicKey, isSigner: false, isWritable: true },
         { pubkey: vault.publicKey, isSigner: true, isWritable: true },
-        { pubkey: this.swapProgramId, isSigner: false, isWritable: false },
+        { pubkey: proofPublicKey, isSigner: false, isWritable: false },
 
         { pubkey: srcSPublicKey, isSigner: false, isWritable: true },
         { pubkey: mintSPublicKey, isSigner: false, isWritable: false },
