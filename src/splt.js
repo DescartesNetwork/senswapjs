@@ -30,6 +30,7 @@ const AuthorityType = {
   }
 }
 
+
 class SPLT extends Tx {
   constructor(
     spltProgramAddress = DEFAULT_SPLT_PROGRAM_ADDRESS,
@@ -253,7 +254,7 @@ class SPLT extends Tx {
     for (let signerAddress of signerAddresses)
       if (!account.isAddress(signerAddress))
         throw new Error('Invalid signer address');
-    // Gey payer
+    // Get payer
     const payerAddress = await wallet.getAccount();
     const payerPublicKey = account.fromAddress(payerAddress);
     // Rent multisig

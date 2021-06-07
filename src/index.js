@@ -10,6 +10,8 @@ const LiteSwap = require('./liteSwap');
 const { SPLT, AuthorityType } = require('./splt');
 const LiteSPLT = require('./liteSPLT');
 const Lamports = require('./lamports');
+const Farming = require('./farming');
+const LiteFarming = require('./liteFarming');
 const oracle = require('./oracle');
 const crypto = require('./crypto');
 const {
@@ -28,6 +30,7 @@ module.exports = {
   Swap, LiteSwap,
   SPLT, AuthorityType, LiteSPLT,
   Lamports,
+  Farming, LiteFarming,
   oracle, ...oracle,
   crypto,
   WalletInterface, RawWallet,

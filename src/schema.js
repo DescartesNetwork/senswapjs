@@ -1,7 +1,7 @@
 const schema = {}
 
 /**
- * SenSwap
+ * Swap
  */
 
 schema.POOL_STATE = {
@@ -32,6 +32,46 @@ schema.POOL_SCHEMA = [
   { key: 'mint_b', type: 'pub' },
   { key: 'treasury_b', type: 'pub' },
   { key: 'reserve_b', type: 'u64' },
+];
+
+/**
+ * Farming
+ */
+
+schema.DEBT_SCHEMA = [
+  { key: 'stake_pool', type: 'pub' },
+  { key: 'owner', type: 'pub' },
+  { key: 'account', type: 'pub' },
+  { key: 'debt', type: 'u128' },
+  { key: 'is_initialized', type: 'bool' },
+]
+
+schema.STAKE_POOL_STATE = {
+  get Uninitialized() {
+    return 0;
+  },
+  get Initialized() {
+    return 1;
+  },
+  get Frozen() {
+    return 2;
+  }
+}
+schema.STAKE_POOL_SCHEMA = [
+  { key: 'owner', type: 'pub' },
+  { key: 'state', type: 'u8' },
+  { key: 'genesis_timestamp', type: 'i64' },
+
+  { key: 'total_shares', type: 'u64' },
+  { key: 'mint_share', type: 'pub' },
+
+  { key: 'mint_token', type: 'pub' },
+  { key: 'treasury_token', type: 'pub' },
+
+  { key: 'reward', type: 'u64' },
+  { key: 'period', type: 'u64' },
+  { key: 'compensation', type: 'i128' },
+  { key: 'treasury_sen', type: 'pub' },
 ];
 
 /**
