@@ -1,5 +1,5 @@
 const Farming = require('./farming');
-const { createAccount, createStrictAccount, deriveAssociatedAddress } = require('./account');
+const { createAccount } = require('./account');
 const {
   DEFAULT_FARMING_PROGRAM_ADDRESS,
   DEFAULT_SPLT_PROGRAM_ADDRESS,

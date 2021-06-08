@@ -1,8 +1,7 @@
 const nacl = require('tweetnacl');
 const { Connection, Transaction, SystemProgram } = require('@solana/web3.js');
 const account = require('../account');
-
-const DEFAULT_NODEURL = 'https://devnet.solana.com';
+const { DEFAULT_NODEURL } = require('../defaults');
 
 class Tx {
   constructor(nodeUrl = DEFAULT_NODEURL) {
