@@ -250,10 +250,10 @@ describe('Farming library', function () {
       );
     });
 
-    it('Should havest', async function () {
+    it('Should harvest', async function () {
       const farming = new Farming();
       await (async () => new Promise((resolve, _) => setTimeout(resolve, 10000)))();
-      await farming.havest(
+      await farming.harvest(
         STAKE_POOL_ADDRESS,
         MINT_SHARE_ADDRESS,
         SHARE_ADDRESS,

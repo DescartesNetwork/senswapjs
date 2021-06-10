@@ -436,7 +436,7 @@ class Farming extends Tx {
     return txId;
   }
 
-  havest = async (
+  harvest = async (
     stakePoolAddress, mintShareAddress,
     shareAddress, debtAddress,
     dstSenAddress, treasurySenAddress,

@@ -117,9 +117,9 @@ class LiteFarming {
   }
 
   /**
-   * Havest
+   * Harvest
    */
-  havest = async (stakePoolAddress, dstSenAddress, wallet) => {
+  harvest = async (stakePoolAddress, dstSenAddress, wallet) => {
     const {
       mint_share: { address: mintShareAddress },
       treasury_sen: { address: treasurySenAddress }
@@ -128,7 +128,7 @@ class LiteFarming {
       address: debtAddress,
       account: { address: shareAddress }
     } = await this._farming.getStakeAccountData(stakePoolAddress, wallet);
-    return await this._farming.havest(
+    return await this._farming.harvest(
       stakePoolAddress, mintShareAddress,
       shareAddress, debtAddress,
       dstSenAddress, treasurySenAddress,
