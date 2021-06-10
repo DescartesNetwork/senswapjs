@@ -1,25 +1,17 @@
 const axios = require('axios');
 const seedrandom = require('seedrandom');
 const { LAMPORTS_PER_SOL } = require('@solana/web3.js');
-const nacl = require('tweetnacl');
 const emoji = require('../data/emoji.json');
-
-const TOTAL_EMOJI = emoji.length;
 
 
 const util = {}
 
 util.BASIC_TX_FEE = 0.000005;
-
+util.TOTAL_EMOJI = emoji.length;
 util.LAMPORTS_PER_SOL = LAMPORTS_PER_SOL;
 
 util.randEmoji = (seed) => {
-  return emoji[Math.floor(seedrandom(seed)() * TOTAL_EMOJI)];
-}
-
-util.toSymbol = (symbol) => {
-  if (!symbol) return '';
-  return symbol.join('').replace(/\u0000/g, '').replace(/-/g, '');
+  return emoji[Math.floor(seedrandom(seed)() * util.TOTAL_EMOJI)];
 }
 
 util.parseCGK = async (ticket = '') => {
@@ -45,10 +37,6 @@ util.parseCGK = async (ticket = '') => {
     icon, symbol, name, address,
     rank, price, priceChange, totalVolume
   }
-}
-
-util.salt = () => {
-  return Buffer.from(nacl.randomBytes(64)).toString('hex');
 }
 
 module.exports = util;

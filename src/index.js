@@ -2,7 +2,6 @@ const account = require('./account');
 const defaults = require('./defaults');
 const math = require('./math');
 const keystore = require('./keystore');
-const hdkey = require('./hdkey');
 const util = require('./util');
 const schema = require('./schema');
 const Swap = require('./swap');
@@ -24,7 +23,6 @@ module.exports = {
   defaults, ...defaults,
   math, ...math,
   keystore, ...keystore,
-  hdkey, ...hdkey,
   util, ...util,
   schema, ...schema,
   Swap, LiteSwap,
@@ -32,7 +30,7 @@ module.exports = {
   Lamports,
   Farming, LiteFarming,
   oracle, ...oracle,
-  crypto,
+  crypto, ...crypto,
   WalletInterface, RawWallet,
   SecretKeyWallet, KeystoreWallet, Coin98Wallet,
 }

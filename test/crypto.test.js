@@ -11,7 +11,7 @@ describe('Crypto library', function () {
   it('Should encrypt', function (done) {
     const plain = '123';
     const key = crypto.hash(plain);
-    const cypher = crypto.encrypt(key, plain);
+    const cypher = crypto.aes.encrypt(key, plain);
     if (cypher != 'd50d08') return done('Incorrect encryption');
     return done();
   });
@@ -19,7 +19,7 @@ describe('Crypto library', function () {
   it('Should decrypt', function (done) {
     const cypher = 'd50d08';
     const key = crypto.hash('123');
-    const plain = crypto.decrypt(key, cypher);
+    const plain = crypto.aes.decrypt(key, cypher);
     if (plain != '123') return done('Incorrect decryption');
     return done();
   });
