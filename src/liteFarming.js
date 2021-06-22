@@ -82,7 +82,7 @@ class LiteFarming {
     const {
       address: debtAddress,
       account: { address: shareAddress }
-    } = await this._farming.getStakeAccountData(stakePoolAddress, wallet);
+    } = await this.getStakeAccountData(stakePoolAddress, wallet);
     return await this._farming.stake(
       amount,
       stakePoolAddress, mintShareAddress,
@@ -105,7 +105,7 @@ class LiteFarming {
     const {
       address: debtAddress,
       account: { address: shareAddress }
-    } = await this._farming.getStakeAccountData(stakePoolAddress, wallet);
+    } = await this.getStakeAccountData(stakePoolAddress, wallet);
     return await this._farming.unstake(
       amount,
       stakePoolAddress, mintShareAddress,
@@ -127,7 +127,7 @@ class LiteFarming {
     const {
       address: debtAddress,
       account: { address: shareAddress }
-    } = await this._farming.getStakeAccountData(stakePoolAddress, wallet);
+    } = await this.getStakeAccountData(stakePoolAddress, wallet);
     return await this._farming.harvest(
       stakePoolAddress, mintShareAddress,
       shareAddress, debtAddress,
