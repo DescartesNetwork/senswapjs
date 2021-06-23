@@ -40,7 +40,8 @@ class LiteFarming {
 
   getStakeAccountData = async (stakePoolAddress, wallet) => {
     const ownerAddress = await wallet.getAccount();
-    const debtData = await this._farming._deriveDebtAddress(ownerAddress, stakePoolAddress);
+    const debtAddress = await this._farming._deriveDebtAddress(ownerAddress, stakePoolAddress);
+    const debtData = await this._farming.getDebtData(debtAddress);
     return debtData;
   }
 
