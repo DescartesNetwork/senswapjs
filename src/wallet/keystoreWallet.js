@@ -56,6 +56,11 @@ class KeystoreWallet extends WalletInterface {
     const data = account.verify(addr, sig, msg);
     return data;
   }
+
+  _disconnect = async () => {
+    storage.clear('WalletType');
+    storage.clear('SecretKey');
+  }
 }
 
 module.exports = KeystoreWallet;

@@ -48,6 +48,10 @@ class RawWallet extends WalletInterface {
     const data = account.verify(addr, sig, msg);
     return data;
   }
+
+  _disconnect = async () => {
+    this.secretKey = null;
+  }
 }
 
 module.exports = RawWallet;

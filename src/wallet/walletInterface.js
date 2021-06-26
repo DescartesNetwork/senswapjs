@@ -34,6 +34,11 @@ class WalletInterface {
     if (!this._verify) throw new Error('Wallet is not connected');
     return await this._verify(signature, message);
   }
+
+  disconnect = async () => {
+    if (!this._disconnect) throw new Error('Wallet is not connected');
+    return await this._disconnect();
+  }
 }
 
 module.exports = WalletInterface;

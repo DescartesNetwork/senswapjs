@@ -52,6 +52,10 @@ class Coin98Wallet extends WalletInterface {
     const data = await account.verify(addr, sig, msg);
     return data;
   }
+
+  _disconnect = async () => {
+    storage.clear('WalletType');
+  }
 }
 
 module.exports = Coin98Wallet;
