@@ -85,9 +85,7 @@ class SPLT extends Tx {
     const mintPublicKey = account.fromAddress(mintAddress);
     const { data } = await this.connection.getAccountInfo(mintPublicKey) || {};
     if (!data) throw new Error(`Cannot read data of ${mintAddress}`);
-    const value = this.parseMintData(data);
-    const result = { address: mintAddress, ...value };
-    return result;
+    return this.parseMintData(data);
   }
 
   parseAccountData = (data) => {
@@ -101,9 +99,7 @@ class SPLT extends Tx {
     const accountPublicKey = account.fromAddress(accountAddress);
     const { data } = await this.connection.getAccountInfo(accountPublicKey) || {};
     if (!data) throw new Error(`Cannot read data of ${accountAddress}`);
-    const value = this.parseAccountData(data);
-    const result = { address: accountAddress, ...value };
-    return result;
+    return this.parseAccountData(data);
   }
 
   parseMultiSigData = (data) => {
@@ -117,9 +113,7 @@ class SPLT extends Tx {
     const multiSigPublicKey = account.fromAddress(multiSigAddress);
     const { data } = await this.connection.getAccountInfo(multiSigPublicKey) || {};
     if (!data) throw new Error(`Cannot read data of ${multiSigAddress}`);
-    const value = this.parseMultiSigData(data)
-    const result = { address: multiSigAddress, ...value };
-    return result;
+    return this.parseMultiSigData(data);
   }
 
   initializeMint = async (decimals, mintAuthorityAddress, freezeAuthorityAddress, mint, wallet) => {
