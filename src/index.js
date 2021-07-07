@@ -6,8 +6,7 @@ const util = require('./util');
 const schema = require('./schema');
 const Swap = require('./swap');
 const LiteSwap = require('./liteSwap');
-const { SPLT, AuthorityType } = require('./splt');
-const LiteSPLT = require('./liteSPLT');
+const SPLT = require('./splt');
 const Lamports = require('./lamports');
 const Farming = require('./farming');
 const LiteFarming = require('./liteFarming');
@@ -26,7 +25,7 @@ module.exports = {
   util, ...util,
   schema, ...schema,
   Swap, LiteSwap,
-  SPLT, AuthorityType, LiteSPLT,
+  SPLT,
   Lamports,
   Farming, LiteFarming,
   oracle, ...oracle,

@@ -47,21 +47,7 @@ class SPLT extends Tx {
     this._lamports = new Lamports(nodeUrl);
   }
 
-  watchAndFetch = (callback) => {
-    return this.watch((er, re) => {
-      if (er) return callback(er, null);
-      const { type, address } = re;
-      let getData = () => { }
-      if (type === 'account') getData = this.getAccountData;
-      if (type === 'mint') getData = this.getMintData;
-      if (type === 'multisig') getData = this.getMultiSigData;
-      return getData(address).then(data => {
-        return callback(null, data);
-      }).catch(er => {
-        return callback(er, null);
-      });
-    });
-  }
+  static AuthorityType = AuthorityType;
 
   watch = (callback) => {
     return this.connection.onProgramAccountChange(this.spltProgramId, ({ accountId, accountInfo: { data } }) => {
@@ -70,51 +56,69 @@ class SPLT extends Tx {
       const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
       const multisigSpace = (new soproxABI.struct(schema.MULTISIG_SCHEMA)).space;
       let type = null;
-      if (data.length === accountSpace) type = 'account';
-      if (data.length === mintSpace) type = 'mint';
-      if (data.length === multisigSpace) type = 'multisig';
+      let value = {};
+      if (data.length === accountSpace) {
+        type = 'account';
+        value = this._parseAccountData(data);
+      }
+      if (data.length === mintSpace) {
+        type = 'mint';
+        value = this._parseMintData(data);
+      }
+      if (data.length === multisigSpace) {
+        type = 'multisig';
+        value = this._parseMultiSigData(data);
+      }
       if (!type) return callback('Unmatched type', null);
-      return callback(null, { type, address });
+      return callback(null, { type, address, value });
     });
   }
 
+  parseMintData = (data) => {
+    const mintLayout = new soproxABI.struct(schema.MINT_SCHEMA);
+    if (data.length !== mintLayout.space) throw new Error('Unmatched buffer length');
+    mintLayout.fromBuffer(data);
+    return mintLayout.value;
+  }
   getMintData = async (mintAddress) => {
     if (!account.isAddress(mintAddress)) throw new Error('Invalid mint address');
     const mintPublicKey = account.fromAddress(mintAddress);
     const { data } = await this.connection.getAccountInfo(mintPublicKey) || {};
     if (!data) throw new Error(`Cannot read data of ${mintAddress}`);
-    const mintLayout = new soproxABI.struct(schema.MINT_SCHEMA);
-    if (data.length !== mintLayout.space) throw new Error('Unmatched buffer length');
-    mintLayout.fromBuffer(data);
-    const result = { address: mintAddress, ...mintLayout.value };
+    const value = this.parseMintData(data);
+    const result = { address: mintAddress, ...value };
     return result;
   }
 
-  getAccountData = async (accountAddress) => {
-    if (!account.isAddress(accountAddress)) throw new Error('Invalid account address');
-    const accountPublicKey = account.fromAddress(accountAddress);
-    let result = { address: accountAddress }
-    const { data } = await this.connection.getAccountInfo(accountPublicKey) || {};
-    if (!data) throw new Error(`Cannot read data of ${accountAddress}`);
+  parseAccountData = (data) => {
     const accountLayout = new soproxABI.struct(schema.ACCOUNT_SCHEMA);
     if (data.length !== accountLayout.space) throw new Error('Unmatched buffer length');
     accountLayout.fromBuffer(data);
-    let mint = { address: accountLayout.value.mint }
-    result = { ...result, ...accountLayout.value, mint }
-    const mintData = await this.getMintData(result.mint.address);
-    result.mint = { ...result.mint, ...mintData }
+    return accountLayout.value;
+  }
+  getAccountData = async (accountAddress) => {
+    if (!account.isAddress(accountAddress)) throw new Error('Invalid account address');
+    const accountPublicKey = account.fromAddress(accountAddress);
+    const { data } = await this.connection.getAccountInfo(accountPublicKey) || {};
+    if (!data) throw new Error(`Cannot read data of ${accountAddress}`);
+    const value = this.parseAccountData(data);
+    const result = { address: accountAddress, ...value };
     return result;
   }
 
+  parseMultiSigData = (data) => {
+    const multiSigLayout = new soproxABI.struct(schema.MULTISIG_SCHEMA);
+    if (data.length !== multiSigLayout.space) throw new Error('Unmatched buffer length');
+    multiSigLayout.fromBuffer(data);
+    return multiSigLayout.value;
+  }
   getMultiSigData = async (multiSigAddress) => {
     if (!account.isAddress(multiSigAddress)) throw new Error('Invalid multiSig address');
     const multiSigPublicKey = account.fromAddress(multiSigAddress);
     const { data } = await this.connection.getAccountInfo(multiSigPublicKey) || {};
     if (!data) throw new Error(`Cannot read data of ${multiSigAddress}`);
-    const multiSigLayout = new soproxABI.struct(schema.MULTISIG_SCHEMA);
-    if (data.length !== multiSigLayout.space) throw new Error('Unmatched buffer length');
-    multiSigLayout.fromBuffer(data);
-    const result = { address: multiSigAddress, ...multiSigLayout.value }
+    const value = this.parseMultiSigData(data)
+    const result = { address: multiSigAddress, ...value };
     return result;
   }
 
@@ -159,70 +163,25 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
-  initializeAccount = async (accountOrAddress, mintAddress, wallet, ownerAddress = null) => {
-    if (!accountOrAddress) throw new Error('Invalid token account/address');
-    const _initializeAccount = account.isAddress(accountOrAddress) ? this._initializeAssociatedAccount : this._initializeArbitraryAccount;
-    const payerAddress = await wallet.getAccount();
-    const txId = await _initializeAccount(accountOrAddress, ownerAddress || payerAddress, mintAddress, wallet);
-    return txId;
-  }
-
-  _initializeArbitraryAccount = async (newAccount, ownerAddress, mintAddress, wallet) => {
-    if (!account.isAddress(ownerAddress)) throw new Error('Invalid owner address');
+  initializeAccount = async (mintAddress, ownerAddress, wallet) => {
     if (!account.isAddress(mintAddress)) throw new Error('Invalid mint address');
-    const ownerPublicKey = account.fromAddress(ownerAddress);;
+    if (!account.isAddress(ownerAddress)) throw new Error('Invalid owner address');
     const mintPublicKey = account.fromAddress(mintAddress);
-    // Get payer
-    const payerAddress = await wallet.getAccount();
-    const payerPublicKey = account.fromAddress(payerAddress);
-    // Rent account
-    const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
-    await this._rentAccount(wallet, newAccount, accountSpace, this.spltProgramId);
-    // Build tx
-    let transaction = new Transaction();
-    transaction = await this._addRecentCommitment(transaction);
-    const layout = new soproxABI.struct([{ key: 'code', type: 'u8' }], { code: 1 });
-    const instruction = new TransactionInstruction({
-      keys: [
-        { pubkey: newAccount.publicKey, isSigner: false, isWritable: true },
-        { pubkey: mintPublicKey, isSigner: false, isWritable: false },
-        { pubkey: ownerPublicKey, isSigner: false, isWritable: false },
-        { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
-      ],
-      programId: this.spltProgramId,
-      data: layout.toBuffer()
-    });
-    transaction.add(instruction);
-    transaction.feePayer = payerPublicKey;
-    // Sign tx
-    const payerSig = await wallet.sign(transaction);
-    this._addSignature(transaction, payerSig);
-    // Send tx
-    const txId = await this._sendTransaction(transaction);
-    return txId;
-  }
-
-  _initializeAssociatedAccount = async (accountAddress, ownerAddress, mintAddress, wallet) => {
-    if (!account.isAddress(accountAddress)) throw new Error('Invalid account address');
-    if (!account.isAddress(ownerAddress)) throw new Error('Invalid owner address');
-    if (!account.isAddress(mintAddress)) throw new Error('Invalid mint address');
     const ownerPublicKey = account.fromAddress(ownerAddress);
-    const accountPublicKey = account.fromAddress(accountAddress);
-    const mintPublicKey = account.fromAddress(mintAddress);
     // Get payer
     const payerAddress = await wallet.getAccount();
     const payerPublicKey = account.fromAddress(payerAddress);
-    // Validate account address
-    const expectedAccountAddress = await account.deriveAssociatedAddress(
+    // Generate the associated account address
+    const accountAddress = await account.deriveAssociatedAddress(
       ownerAddress,
       mintAddress,
       this.spltProgramId.toBase58(),
       this.splataProgramId.toBase58()
     );
-    if (accountAddress !== expectedAccountAddress) throw new Error('Invalid associated account address');
+    const accountPublicKey = account.fromAddress(accountAddress);
     // Build tx
     let transaction = new Transaction();
     transaction = await this._addRecentCommitment(transaction);
@@ -246,7 +205,7 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { accountAddress, txId }
   }
 
   initializeMultiSig = async (minimumSig, signerAddresses, multiSig, wallet) => {
@@ -284,7 +243,7 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
   transfer = async (amount, srcAddress, dstAddress, wallet) => {
@@ -317,7 +276,7 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
   approve = async (amount, srcAddress, delegateAddress, wallet) => {
@@ -350,7 +309,7 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
   revoke = async (srcAddress, wallet) => {
@@ -378,7 +337,7 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
   setAuthority = async (authorityType, newAuthorityAddress, targetAddress, wallet) => {
@@ -418,7 +377,7 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
   mintTo = async (amount, mintAddress, dstAddress, wallet) => {
@@ -451,7 +410,7 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
   burn = async (amount, srcAddress, mintAddress, wallet) => {
@@ -484,7 +443,7 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
   closeAccount = async (targetAddress, wallet) => {
@@ -513,7 +472,7 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
   freezeAccount = async (targetAddress, mintAddress, wallet) => {
@@ -544,7 +503,7 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
   thawAccount = async (targetAddress, mintAddress, wallet) => {
@@ -575,60 +534,39 @@ class SPLT extends Tx {
     this._addSignature(transaction, payerSig);
     // Send tx
     const txId = await this._sendTransaction(transaction);
-    return txId;
+    return { txId }
   }
 
-  wrap = async (lamports, accountOrAddress, wallet, ownerAddress = null) => {
-    // Validate account/address
-    if (!accountOrAddress) throw new Error('Invalid token account/address');
+  wrap = async (lamports, ownerAddress, wallet) => {
+    if (!account.isAddress(ownerAddress)) throw new Error('Invalid owner address');
+    // Generate the associated account address
+    const accountAddress = await account.deriveAssociatedAddress(
+      ownerAddress,
+      DEFAULT_WSOL,
+      this.spltProgramId.toBase58(),
+      this.splataProgramId.toBase58()
+    );
     // Validate space
     const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
     const requiredLamports = await this.connection.getMinimumBalanceForRentExemption(accountSpace);
     if (requiredLamports > lamports) throw new Error(`At least ${requiredLamports} is required`);
     // Call wrap
-    const _wrap = account.isAddress(accountOrAddress) ? this._wrapAssociatedAccount : this._wrapArbitraryAccount;
-    const payerAddress = await wallet.getAccount();
-    const txId = await _wrap(lamports, accountOrAddress, ownerAddress || payerAddress, wallet);
-    return txId;
-  }
-
-  _wrapArbitraryAccount = async (lamports, newAccount, ownerAddress, wallet) => {
-    // Get payer
-    const payerAddress = await wallet.getAccount();
-    const payerPublicKey = account.fromAddress(payerAddress);
-    // Build tx
-    let transaction = new Transaction();
-    transaction = await this._addRecentCommitment(transaction);
-    const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
-    const instruction = SystemProgram.createAccount({
-      fromPubkey: payerPublicKey,
-      newAccountPubkey: newAccount.publicKey,
-      lamports,
-      space: accountSpace,
-      programId: this.spltProgramId
-    });
-    transaction.add(instruction);
-    transaction.feePayer = payerPublicKey;
-    // Sign tx
-    const payerSig = await wallet.sign(transaction);
-    this._addSignature(transaction, payerSig);
-    const accSig = this._selfSign(transaction, newAccount);
-    this._addSignature(transaction, accSig);
-    // Send tx
-    await this._sendTransaction(transaction);
-    const txId = await this.initializeAccount(newAccount, DEFAULT_WSOL, wallet, ownerAddress);
-    return txId;
-  }
-
-  _wrapAssociatedAccount = async (lamports, accountAddress, ownerAddress, wallet) => {
     await this._lamports.transfer(lamports, accountAddress, wallet);
-    const txId = await this.initializeAccount(accountAddress, DEFAULT_WSOL, wallet, ownerAddress);
-    return txId;
+    const { txId } = await this.initializeAccount(DEFAULT_WSOL, ownerAddress, wallet);
+    return { accountAddress, txId }
   }
 
-  unwrap = async (targetAddress, wallet) => {
-    return await this.closeAccount(targetAddress, wallet);
+  unwrap = async (wallet) => {
+    // Generate the associated account address
+    const ownerAddress = await wallet.getAccount();
+    const accountAddress = await account.deriveAssociatedAddress(
+      ownerAddress,
+      DEFAULT_WSOL,
+      this.spltProgramId.toBase58(),
+      this.splataProgramId.toBase58()
+    );
+    return await this.closeAccount(accountAddress, wallet);
   }
 }
 
-module.exports = { SPLT, AuthorityType };
+module.exports = SPLT;
