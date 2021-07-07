@@ -50,27 +50,27 @@ class SPLT extends Tx {
   static AuthorityType = AuthorityType;
 
   watch = (callback) => {
-    return this.connection.onProgramAccountChange(this.spltProgramId, ({ accountId, accountInfo: { data } }) => {
+    return this.connection.onProgramAccountChange(this.spltProgramId, ({ accountId, accountInfo: { data: buf } }) => {
       const address = accountId.toBase58();
       const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
       const mintSpace = (new soproxABI.struct(schema.MINT_SCHEMA)).space;
       const multisigSpace = (new soproxABI.struct(schema.MULTISIG_SCHEMA)).space;
       let type = null;
-      let value = {};
+      let data = {};
       if (data.length === accountSpace) {
         type = 'account';
-        value = this._parseAccountData(data);
+        data = this.parseAccountData(buf);
       }
       if (data.length === mintSpace) {
         type = 'mint';
-        value = this._parseMintData(data);
+        data = this.parseMintData(buf);
       }
       if (data.length === multisigSpace) {
         type = 'multisig';
-        value = this._parseMultiSigData(data);
+        data = this.parseMultiSigData(buf);
       }
       if (!type) return callback('Unmatched type', null);
-      return callback(null, { type, address, value });
+      return callback(null, { type, address, data });
     });
   }
 
