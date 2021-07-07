@@ -1,5 +1,5 @@
 const Farming = require('./farming');
-const { createAccount } = require('./account');
+const { createAccount, createStrictAccount } = require('./account');
 const {
   DEFAULT_FARMING_PROGRAM_ADDRESS,
   DEFAULT_SPLT_PROGRAM_ADDRESS,
@@ -49,7 +49,7 @@ class LiteFarming {
    * Initialize Stake Pool
    */
   initializeStakePool = async (reward, period, ownerAddress, mintTokenAddress, mintSenAddress, wallet) => {
-    const stakePool = createAccount();
+    const stakePool = await createStrictAccount(this._farming.farmingProgramId);
     const stakePoolAddress = stakePool.publicKey.toBase58();
     const mintShare = createAccount();
     const mintShareAddress = mintShare.publicKey.toBase58();
