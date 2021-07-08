@@ -75,6 +75,10 @@ class SPLT extends Tx {
     return this.connection.onProgramAccountChange(this.spltProgramId, cb, 'confirmed', filters);
   }
 
+  unwatch = async (watchId) => {
+    return await this.connection.removeProgramAccountChangeListener(watchId);
+  }
+
   parseMintData = (data) => {
     const mintLayout = new soproxABI.struct(schema.MINT_SCHEMA);
     if (data.length !== mintLayout.space) throw new Error('Unmatched buffer length');
