@@ -12,7 +12,7 @@ class Lamports extends Tx {
   }
 
   _createConnection = () => {
-    const connection = new Connection(this.nodeUrl, 'recent');
+    const connection = new Connection(this.nodeUrl, 'confirmed');
     return connection;
   }
 

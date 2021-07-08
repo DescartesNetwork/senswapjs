@@ -10,21 +10,21 @@ class Tx {
   }
 
   _createConnection = () => {
-    const connection = new Connection(this.nodeUrl, 'recent');
+    const connection = new Connection(this.nodeUrl, 'confirmed');
     return connection;
   }
 
   _sendTransaction = async (transaction) => {
     const tx = transaction.serialize();
-    const txId = await this.connection.sendRawTransaction(tx, { skipPreflight: true, commitment: 'recent' });
-    const data = await this.connection.confirmTransaction(txId, 'recent');
+    const txId = await this.connection.sendRawTransaction(tx, { skipPreflight: true, commitment: 'confirmed' });
+    const data = await this.connection.confirmTransaction(txId, 'confirmed');
     const { value: { err } } = data;
     if (err) throw new Error(err);
     return txId;
   }
 
   _addRecentCommitment = async (transaction) => {
-    const { blockhash } = await this.connection.getRecentBlockhash('recent');
+    const { blockhash } = await this.connection.getRecentBlockhash('confirmed');
     transaction.recentBlockhash = blockhash;
     return transaction;
   }
