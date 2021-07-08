@@ -76,6 +76,7 @@ class SPLT extends Tx {
   }
 
   unwatch = async (watchId) => {
+    if (!watchId) return;
     return await this.connection.removeProgramAccountChangeListener(watchId);
   }
 
