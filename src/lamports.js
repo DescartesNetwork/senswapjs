@@ -1,6 +1,4 @@
-const {
-  Connection, Transaction, SystemProgram,
-} = require('@solana/web3.js');
+const { Transaction, SystemProgram } = require('@solana/web3.js');
 
 const Tx = require('./core/tx');
 const account = require('./account');
@@ -9,11 +7,6 @@ const account = require('./account');
 class Lamports extends Tx {
   constructor(nodeUrl) {
     super(nodeUrl);
-  }
-
-  _createConnection = () => {
-    const connection = new Connection(this.nodeUrl, 'confirmed');
-    return connection;
   }
 
   watch = (address, callback) => {
