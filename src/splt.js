@@ -49,6 +49,15 @@ class SPLT extends Tx {
 
   static AuthorityType = AuthorityType;
 
+  deriveAssociatedAddress = async (walletAddress, mintAddress) => {
+    return await account.deriveAssociatedAddress(
+      walletAddress,
+      mintAddress,
+      this.spltProgramId.toBase58(),
+      this.splataProgramId.toBase58()
+    );
+  }
+
   watch = (callback, filters) => {
     const cb = ({ accountId, accountInfo: { data: buf } }) => {
       const address = accountId.toBase58();
@@ -175,12 +184,7 @@ class SPLT extends Tx {
     const payerAddress = await wallet.getAccount();
     const payerPublicKey = account.fromAddress(payerAddress);
     // Generate the associated account address
-    const accountAddress = await account.deriveAssociatedAddress(
-      ownerAddress,
-      mintAddress,
-      this.spltProgramId.toBase58(),
-      this.splataProgramId.toBase58()
-    );
+    const accountAddress = await this.deriveAssociatedAddress(ownerAddress, mintAddress);
     const accountPublicKey = account.fromAddress(accountAddress);
     // Build tx
     let transaction = new Transaction();
@@ -540,12 +544,7 @@ class SPLT extends Tx {
   wrap = async (lamports, ownerAddress, wallet) => {
     if (!account.isAddress(ownerAddress)) throw new Error('Invalid owner address');
     // Generate the associated account address
-    const accountAddress = await account.deriveAssociatedAddress(
-      ownerAddress,
-      DEFAULT_WSOL,
-      this.spltProgramId.toBase58(),
-      this.splataProgramId.toBase58()
-    );
+    const accountAddress = await this.deriveAssociatedAddress(ownerAddress, DEFAULT_WSOL);
     // Validate space
     const accountSpace = (new soproxABI.struct(schema.ACCOUNT_SCHEMA)).space;
     const requiredLamports = await this.connection.getMinimumBalanceForRentExemption(accountSpace);
@@ -559,12 +558,7 @@ class SPLT extends Tx {
   unwrap = async (wallet) => {
     // Generate the associated account address
     const ownerAddress = await wallet.getAccount();
-    const accountAddress = await account.deriveAssociatedAddress(
-      ownerAddress,
-      DEFAULT_WSOL,
-      this.spltProgramId.toBase58(),
-      this.splataProgramId.toBase58()
-    );
+    const accountAddress = await this.deriveAssociatedAddress(ownerAddress, DEFAULT_WSOL);
     return await this.closeAccount(accountAddress, wallet);
   }
 }
