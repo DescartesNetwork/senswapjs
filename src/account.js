@@ -17,9 +17,25 @@ account.isAddress = (address) => {
   }
 }
 
+account.isAssociatedAddress = (address) => {
+  if (!account.isAddress(address)) throw new Error('Invalid address');
+  const publicKey = new PublicKey(address);
+  return PublicKey.isOnCurve(publicKey.toBuffer());
+}
+
 account.createAccount = () => {
   const acc = new Account();
   return acc;
+}
+
+account.fromAddress = (address) => {
+  if (!address) return false;
+  try {
+    const publicKey = new PublicKey(address);
+    return publicKey;
+  } catch (er) {
+    return null;
+  }
 }
 
 account.createStrictAccount = (programId) => {
@@ -89,16 +105,6 @@ account.deriveAssociatedAddress = async (
     splataPublicKey
   );
   return publicKey.toBase58();
-}
-
-account.fromAddress = (address) => {
-  if (!address) return false;
-  try {
-    const publicKey = new PublicKey(address);
-    return publicKey;
-  } catch (er) {
-    return null;
-  }
 }
 
 account.fromSecretKey = (secretKey) => {
