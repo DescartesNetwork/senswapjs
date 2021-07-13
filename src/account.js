@@ -20,7 +20,7 @@ account.isAddress = (address) => {
 account.isAssociatedAddress = (address) => {
   if (!account.isAddress(address)) throw new Error('Invalid address');
   const publicKey = new PublicKey(address);
-  return PublicKey.isOnCurve(publicKey.toBuffer());
+  return !PublicKey.isOnCurve(publicKey.toBuffer());
 }
 
 account.createAccount = () => {
