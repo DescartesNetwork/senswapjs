@@ -19,6 +19,11 @@ class Lamports extends Tx {
     });
   }
 
+  unwatch = async (watchId) => {
+    if (!watchId) return;
+    return await this.connection.removeAccountChangeListener(watchId);
+  }
+
   get = async (address) => {
     if (!account.isAddress(address)) throw new Error('Invalid address');
     const publicKey = account.fromAddress(address);
