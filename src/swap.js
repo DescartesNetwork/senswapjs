@@ -13,7 +13,7 @@ const {
   DEFAULT_SWAP_PROGRAM_ADDRESS,
   DEFAULT_SPLT_PROGRAM_ADDRESS,
   DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS,
-  DEFAULT_EMPTY_ADDRESSS
+  DEFAULT_EMPTY_ADDRESS
 } = require('./defaults');
 
 class Swap extends Tx {
@@ -164,9 +164,9 @@ class Swap extends Tx {
     srcBAddress, mintBAddress,
     wallet
   ) => {
-    srcSAddress = srcSAddress || DEFAULT_EMPTY_ADDRESSS;
-    srcAAddress = srcAAddress || DEFAULT_EMPTY_ADDRESSS;
-    srcBAddress = srcBAddress || DEFAULT_EMPTY_ADDRESSS;
+    srcSAddress = srcSAddress || DEFAULT_EMPTY_ADDRESS;
+    srcAAddress = srcAAddress || DEFAULT_EMPTY_ADDRESS;
+    srcBAddress = srcBAddress || DEFAULT_EMPTY_ADDRESS;
     if (!account.isAddress(ownerAddress)) throw new Error('Invalid owner address');
     if (!account.isAddress(lptAddress)) throw new Error('Invalid lpt address');
     if (!account.isAddress(srcSAddress)) throw new Error('Invalid source address');
@@ -281,9 +281,9 @@ class Swap extends Tx {
     wallet
   ) => {
     if (!srcSAddress && !srcAAddress && !srcBAddress) throw new Error('Invalid source address');
-    srcSAddress = srcSAddress || DEFAULT_EMPTY_ADDRESSS;
-    srcAAddress = srcAAddress || DEFAULT_EMPTY_ADDRESSS;
-    srcBAddress = srcBAddress || DEFAULT_EMPTY_ADDRESSS;
+    srcSAddress = srcSAddress || DEFAULT_EMPTY_ADDRESS;
+    srcAAddress = srcAAddress || DEFAULT_EMPTY_ADDRESS;
+    srcBAddress = srcBAddress || DEFAULT_EMPTY_ADDRESS;
     if (!account.isAddress(poolAddress)) throw new Error('Invalid pool address');
     if (!account.isAddress(lptAddress)) throw new Error('Invalid lpt address');
     if (!account.isAddress(mintLPTAddress)) throw new Error('Invalid mint LPT address');

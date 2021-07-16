@@ -11,7 +11,7 @@ const Lamports = require('./lamports');
 const {
   DEFAULT_SPLT_PROGRAM_ADDRESS,
   DEFAULT_SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ADDRESS,
-  DEFAULT_EMPTY_ADDRESSS,
+  DEFAULT_EMPTY_ADDRESS,
   DEFAULT_WSOL,
 } = require('./defaults');
 
@@ -132,7 +132,7 @@ class SPLT extends Tx {
   }
 
   initializeMint = async (decimals, mintAuthorityAddress, freezeAuthorityAddress, mint, wallet) => {
-    freezeAuthorityAddress = freezeAuthorityAddress || DEFAULT_EMPTY_ADDRESSS;
+    freezeAuthorityAddress = freezeAuthorityAddress || DEFAULT_EMPTY_ADDRESS;
     if (!account.isAddress(mintAuthorityAddress)) throw new Error('Invalid mint authority address');
     if (!account.isAddress(freezeAuthorityAddress)) throw new Error('Invalid freeze authority address');
     // Get payer
@@ -154,7 +154,7 @@ class SPLT extends Tx {
       code: 0,
       decimals,
       mint_authority: mintAuthorityAddress,
-      freeze_authority_option: freezeAuthorityAddress === DEFAULT_EMPTY_ADDRESSS ? 0 : 1,
+      freeze_authority_option: freezeAuthorityAddress === DEFAULT_EMPTY_ADDRESS ? 0 : 1,
       freeze_authority: freezeAuthorityAddress,
     });
     const instruction = new TransactionInstruction({
@@ -345,7 +345,7 @@ class SPLT extends Tx {
   }
 
   setAuthority = async (authorityType, newAuthorityAddress, targetAddress, wallet) => {
-    newAuthorityAddress = newAuthorityAddress || DEFAULT_EMPTY_ADDRESSS;
+    newAuthorityAddress = newAuthorityAddress || DEFAULT_EMPTY_ADDRESS;
     if (!account.isAddress(newAuthorityAddress)) throw new Error('Invalid new authority address');
     if (!account.isAddress(targetAddress)) throw new Error('Invalid target address');
     const targetPublicKey = account.fromAddress(targetAddress);
@@ -363,7 +363,7 @@ class SPLT extends Tx {
     ], {
       code: 6,
       authority_type: authorityType,
-      new_authority_option: newAuthorityAddress === DEFAULT_EMPTY_ADDRESSS ? 0 : 1,
+      new_authority_option: newAuthorityAddress === DEFAULT_EMPTY_ADDRESS ? 0 : 1,
       new_authority: newAuthorityAddress,
     });
     const instruction = new TransactionInstruction({
