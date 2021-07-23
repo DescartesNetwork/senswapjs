@@ -18,9 +18,8 @@ class PhantomWallet extends WalletInterface {
   _getNode = () => {
     return new Promise((resolve, reject) => {
       const { solana } = window;
-      const { isPhantom } = solana || {};
-      if (!isPhantom) reject("Wallet is not connected");
-      solana.connect({ onlyIfTrusted: true });
+      if (!solana?.isPhantom) reject("Wallet is not connected");
+      solana.connect();
       return solana.on("connect", () => resolve(solana));
     });
   };
