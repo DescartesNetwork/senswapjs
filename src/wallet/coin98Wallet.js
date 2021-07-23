@@ -1,9 +1,8 @@
-const bs58 = require('bs58');
+const bs58 = require("bs58");
 
-const account = require('../account');
-const storage = require('./storage');
-const WalletInterface = require('./walletInterface');
-
+const account = require("../account");
+const storage = require("./storage");
+const WalletInterface = require("./walletInterface");
 
 class Coin98Wallet extends WalletInterface {
   constructor() {
@@ -13,49 +12,54 @@ class Coin98Wallet extends WalletInterface {
   }
 
   _setWallet = () => {
-    storage.set('WalletType', 'Coin98');
-  }
+    storage.set("WalletType", "Coin98");
+  };
 
-  _getNode = () => {
+  _getNode = async () => {
     const { coin98 } = window;
     const { sol } = coin98 || {};
-    if (!sol) throw new Error('Wallet is not connected');
+    if (!sol) throw new Error("Wallet is not connected");
     return sol;
-  }
+  };
 
   _getAccount = async () => {
-    const node = this._getNode();
-    const re = await node.request({ method: 'sol_accounts' });
+    const node = await this._getNode();
+    const re = await node.request({ method: "sol_accounts" });
     const [acc] = re || [];
-    if (!acc) throw new Error('There is no Solana account');
+    if (!acc) throw new Error("There is no Solana account");
     return acc;
-  }
+  };
 
   _sign = async (transaction) => {
-    const node = this._getNode();
+    const node = await this._getNode();
     const acc = await this.getAccount();
     transaction.feePayer = account.fromAddress(acc);
-    let { publicKey, signature } = await node.request({ method: 'sol_sign', params: [transaction] });
+    let { publicKey, signature } = await node.request({
+      method: "sol_sign",
+      params: [transaction],
+    });
     publicKey = account.fromAddress(publicKey);
     signature = bs58.decode(signature);
-    return { publicKey, signature }
-  }
+    return { publicKey, signature };
+  };
 
   _certify = async (msg) => {
-    const node = this._getNode();
-    const data = await node.request({ method: 'sol_sign', params: [msg] });
+    const node = await this._getNode();
+    const data = await node.request({ method: "sol_sign", params: [msg] });
     return data;
-  }
+  };
 
   _verify = async (sig, msg = null) => {
     const addr = await this._getAccount();
     const data = await account.verify(addr, sig, msg);
     return data;
-  }
+  };
 
   _disconnect = async () => {
-    storage.clear('WalletType');
-  }
+    const node = await this._getNode();
+    storage.clear("WalletType");
+    node.disconnect();
+  };
 }
 
 module.exports = Coin98Wallet;

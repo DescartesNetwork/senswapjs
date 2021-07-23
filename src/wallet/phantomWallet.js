@@ -37,9 +37,9 @@ class PhantomWallet extends WalletInterface {
     const node = await this._getNode();
     const acc = await this.getAccount();
     transaction.feePayer = account.fromAddress(acc);
-    const signedTransaction = await node.signTransaction(transaction);
-    console.log("signedTransaction", signedTransaction);
-    return { publicKey: acc, signature: signedTransaction };
+    const { signature } = await node.signTransaction(transaction);
+    console.log("signature", signature);
+    return { publicKey: acc, signature };
   };
 
   _certify = async (msg) => {
