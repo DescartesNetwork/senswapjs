@@ -19,6 +19,7 @@ class PhantomWallet extends WalletInterface {
     return new Promise((resolve, reject) => {
       const { solana } = window;
       if (!solana?.isPhantom) reject("Wallet is not connected");
+      if (solana.isConnected) return resolve(solana);
       solana.connect();
       return solana.on("connect", () => resolve(solana));
     });
@@ -32,10 +33,12 @@ class PhantomWallet extends WalletInterface {
   };
 
   _sign = async (transaction) => {
+    console.log("transaction", transaction);
     const node = await this._getNode();
     const acc = await this.getAccount();
     transaction.feePayer = account.fromAddress(acc);
     const signedTransaction = node.signTransaction(transaction);
+    console.log("signedTransaction", signedTransaction);
     return { publicKey: acc, signature: signedTransaction };
   };
 
