@@ -1,8 +1,7 @@
-const nacl = require('tweetnacl');
+const nacl = require('tweetnacl')
 
-const account = require('../account');
-const WalletInterface = require('./walletInterface');
-
+const account = require('../account')
+const WalletInterface = require('./walletInterface')
 
 /**
  * Raw wallet is for server side
@@ -10,48 +9,50 @@ const WalletInterface = require('./walletInterface');
  */
 class RawWallet extends WalletInterface {
   constructor(secretKey) {
-    super();
+    super()
 
-    this.secretKey = secretKey;
+    this.secretKey = secretKey
   }
 
   _getWallet = () => {
-    const secretKey = this.secretKey;
-    const acc = account.fromSecretKey(secretKey);
-    return acc;
+    const secretKey = this.secretKey
+    const acc = account.fromSecretKey(secretKey)
+    return acc
   }
 
   _getAccount = async () => {
-    const acc = this._getWallet();
-    if (!acc || !acc.publicKey) throw new Error('No account');
-    const address = acc.publicKey.toBase58();
-    return address;
+    const acc = this._getWallet()
+    if (!acc || !acc.publicKey) throw new Error('No account')
+    const address = acc.publicKey.toBase58()
+    return address
   }
 
   _sign = async (tx) => {
-    const acc = this._getWallet();
-    const signData = tx.serializeMessage();
-    const publicKey = acc.publicKey;
-    const signature = nacl.sign.detached(signData, acc.secretKey);
+    const acc = this._getWallet()
+    const signData = tx.serializeMessage()
+    const publicKey = acc.publicKey
+    const signature = nacl.sign.detached(signData, acc.secretKey)
     return { publicKey, signature }
   }
 
   _certify = async (msg) => {
-    const secretKey = storage.get('SecretKey');
-    const data = account.sign(msg, secretKey);
+    if (!msg || typeof msg != 'string')
+      throw new Error('Message must be a string')
+    const secretKey = storage.get('SecretKey')
+    const data = account.sign(msg, secretKey)
     return { ...data }
   }
 
   _verify = async (sig, msg = null) => {
-    const acc = this._getWallet();
-    const addr = acc.publicKey.toBase58();
-    const data = account.verify(addr, sig, msg);
-    return data;
+    const acc = this._getWallet()
+    const addr = acc.publicKey.toBase58()
+    const data = account.verify(addr, sig, msg)
+    return data
   }
 
   _disconnect = async () => {
-    this.secretKey = null;
+    this.secretKey = null
   }
 }
 
-module.exports = RawWallet;
+module.exports = RawWallet

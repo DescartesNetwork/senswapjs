@@ -44,6 +44,8 @@ class Coin98Wallet extends WalletInterface {
   }
 
   _certify = async (msg) => {
+    if (!msg || typeof msg != 'string')
+      throw new Error('Message must be a string')
     const node = await this._getNode()
     const data = await node.request({ method: 'sol_sign', params: [msg] })
     return data

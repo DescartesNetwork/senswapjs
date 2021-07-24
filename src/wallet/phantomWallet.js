@@ -42,9 +42,12 @@ class PhantomWallet extends WalletInterface {
   }
 
   _certify = async (msg) => {
+    if (!msg || typeof msg != 'string')
+      throw new Error('Message must be a string')
     const node = await this._getNode()
     const address = await this._getAccount()
-    const { signature } = await node.signMessage(msg, 'utf8')
+    const encodedMsg = new TextEncoder().encode(msg)
+    const { signature } = await node.signMessage(encodedMsg, 'utf8')
     const sig = Buffer.from(signature).toString('hex')
     const data = { address, sig, msg }
     return data
