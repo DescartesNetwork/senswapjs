@@ -1,4 +1,4 @@
-const bs58 = require('bs58')
+const nacl = require('tweetnacl')
 
 const account = require('../account')
 const storage = require('./storage')
@@ -54,9 +54,14 @@ class PhantomWallet extends WalletInterface {
   }
 
   _verify = async (sig, msg = null) => {
+    if (!msg || typeof msg != 'string')
+      throw new Error('Phantom wallet did not support opening signed messages')
     const addr = await this._getAccount()
-    const data = await account.verify(addr, sig, msg)
-    return data
+    const publicKey = account.fromAddress(addr).toBuffer()
+    const bufSig = Buffer.from(sig, 'hex')
+    const encodedMsg = new TextEncoder().encode(msg)
+    const valid = nacl.sign.detached.verify(encodedMsg, bufSig, publicKey)
+    return valid
   }
 
   _disconnect = async () => {
