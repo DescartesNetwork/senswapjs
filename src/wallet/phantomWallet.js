@@ -45,7 +45,7 @@ class PhantomWallet extends WalletInterface {
     const node = await this._getNode()
     const address = await this._getAccount()
     const { signature } = await node.signMessage(msg, 'utf8')
-    const sig = bs58.encode(Buffer.from(signature))
+    const sig = Buffer.from(signature).toString('hex')
     const data = { address, sig, msg }
     return data
   }
