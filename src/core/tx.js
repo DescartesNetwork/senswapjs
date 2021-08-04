@@ -2,6 +2,7 @@ const nacl = require('tweetnacl');
 const { Connection, Transaction, SystemProgram } = require('@solana/web3.js');
 const account = require('../account');
 const { DEFAULT_NODEURL } = require('../defaults');
+const ParsedTransactionError = require('./txError');
 
 class Tx {
   constructor(nodeUrl = DEFAULT_NODEURL) {
@@ -19,7 +20,7 @@ class Tx {
     const txId = await this.connection.sendRawTransaction(tx, { skipPreflight: true, commitment: 'recent' });
     const data = await this.connection.confirmTransaction(txId, 'recent');
     const { value: { err } } = data;
-    if (err) throw new Error(err);
+    if (err) throw new ParsedTransactionError(err);
     return txId;
   }
 
